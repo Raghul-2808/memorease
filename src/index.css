@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-lumina-bg: #0f0f0f;
+  --color-lumina-card: #1a1a1a;
+  --color-lumina-accent: #d4ff00;
+  --color-lumina-secondary: #ffcc00;
+  --color-lumina-text: #ffffff;
+  --color-lumina-border: #2a2a2a;
+  
+  --font-serif: "JetBrains Mono", monospace;
+  --font-sans: "JetBrains Mono", monospace;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-lumina-bg text-lumina-text font-sans antialiased selection:bg-lumina-accent/30;
+  }
+}
+
+.glass-lumina {
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-lumina-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #d4ff00, #ffcc00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.btn-primary {
+  @apply px-8 py-3 bg-lumina-accent text-black rounded-xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-lumina-accent/10;
+}
+
+.btn-secondary {
+  @apply px-8 py-3 bg-lumina-card text-lumina-text border border-lumina-border rounded-xl font-bold transition-all hover:bg-lumina-border active:scale-95;
+}
+
+.input-lumina {
+  @apply w-full bg-lumina-bg border border-lumina-border rounded-xl px-5 py-4 text-lumina-text focus:outline-none focus:ring-2 focus:ring-lumina-accent/20 focus:border-lumina-accent transition-all placeholder:text-lumina-text/20;
+}
+
+.card-lumina {
+  @apply bg-lumina-card border border-lumina-border rounded-2xl p-6 transition-all hover:border-lumina-accent/30;
+}
