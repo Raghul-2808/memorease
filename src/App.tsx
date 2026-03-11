@@ -314,9 +314,9 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                     Establish a secure channel with our support team.
                   </p>
                   <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setShowInfoModal(null); }}>
-                    <input type="text" placeholder="IDENTIFIER" className="input-lumina text-xs uppercase" required />
-                    <input type="email" placeholder="COMMS_ADDR" className="input-lumina text-xs uppercase" required />
-                    <textarea placeholder="MESSAGE_PAYLOAD" className="input-lumina text-xs uppercase h-32 resize-none" required />
+                    <input type="text" placeholder="IDENTIFIER" className="input-lumina text-xs placeholder:uppercase" required />
+                    <input type="email" placeholder="COMMS_ADDR" className="input-lumina text-xs placeholder:uppercase" required />
+                    <textarea placeholder="MESSAGE_PAYLOAD" className="input-lumina text-xs placeholder:uppercase h-32 resize-none" required />
                     <button type="submit" className="btn-primary w-full py-4 text-xs uppercase tracking-[0.2em]">Transmit</button>
                   </form>
                 </div>
@@ -352,8 +352,8 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                   <h2 className="text-2xl font-bold text-lumina-text mb-2 uppercase tracking-tighter">Authentication</h2>
                   <p className="text-[10px] text-lumina-text/30 mb-8 uppercase tracking-widest">Verify credentials to access terminal.</p>
                   <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
-                    <input type="email" placeholder="EMAIL" className="input-lumina text-xs uppercase" required />
-                    <input type="password" placeholder="PASSWORD" className="input-lumina text-xs uppercase" required />
+                    <input type="email" placeholder="EMAIL" className="input-lumina text-xs placeholder:uppercase" required />
+                    <input type="password" placeholder="PASSWORD" className="input-lumina text-xs placeholder:uppercase" required />
                     <div className="flex justify-end">
                       <button type="button" onClick={() => setMode('forgot')} className="text-[10px] font-bold text-lumina-accent hover:underline uppercase tracking-widest">Recovery?</button>
                     </div>
@@ -367,9 +367,9 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                   <h2 className="text-2xl font-bold text-lumina-text mb-2 uppercase tracking-tighter">Registration</h2>
                   <p className="text-[10px] text-lumina-text/30 mb-8 uppercase tracking-widest">Create new user profile.</p>
                   <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
-                    <input type="text" placeholder="FULL_NAME" className="input-lumina text-xs uppercase" required />
-                    <input type="email" placeholder="EMAIL" className="input-lumina text-xs uppercase" required />
-                    <input type="password" placeholder="PASSWORD" className="input-lumina text-xs uppercase" required />
+                    <input type="text" placeholder="FULL_NAME" className="input-lumina text-xs placeholder:uppercase" required />
+                    <input type="email" placeholder="EMAIL" className="input-lumina text-xs placeholder:uppercase" required />
+                    <input type="password" placeholder="PASSWORD" className="input-lumina text-xs placeholder:uppercase" required />
                     <button type="submit" className="btn-primary w-full py-4 text-xs uppercase tracking-[0.2em] mt-2">Sign Up</button>
                   </form>
                 </motion.div>
@@ -380,7 +380,7 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                   <h2 className="text-2xl font-bold text-lumina-text mb-2 uppercase tracking-tighter">Recovery</h2>
                   <p className="text-[10px] text-lumina-text/30 mb-8 uppercase tracking-widest">Request credential reset.</p>
                   <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setMode('login'); }}>
-                    <input type="email" placeholder="EMAIL" className="input-lumina text-xs uppercase" required />
+                    <input type="email" placeholder="EMAIL" className="input-lumina text-xs placeholder:uppercase" required />
                     <button type="submit" className="btn-primary w-full py-4 text-xs uppercase tracking-[0.2em]">Send Link</button>
                     <button type="button" onClick={() => setMode('login')} className="w-full text-[10px] font-bold text-lumina-text/20 hover:text-lumina-text transition-colors uppercase tracking-widest">Abort</button>
                   </form>
@@ -826,7 +826,7 @@ const VaultView = ({ subjects, setSubjects }: { subjects: Subject[], setSubjects
               placeholder="NEW_DIRECTORY..." 
               value={newSubjectName}
               onChange={(e) => setNewSubjectName(e.target.value)}
-              className="input-lumina w-64 text-xs uppercase tracking-widest"
+              className="input-lumina w-64 text-xs placeholder:uppercase tracking-widest"
             />
             <button 
               onClick={addSubject}
@@ -888,7 +888,7 @@ const VaultView = ({ subjects, setSubjects }: { subjects: Subject[], setSubjects
                       placeholder="NEW_CHAPTER..." 
                       value={newTopicName}
                       onChange={(e) => setNewTopicName(e.target.value)}
-                      className="input-lumina flex-1 md:w-48 text-[10px] uppercase tracking-widest"
+                      className="input-lumina flex-1 md:w-48 text-[10px] placeholder:uppercase tracking-widest"
                     />
                     <button onClick={() => addTopic(activeSubjectId)} className="btn-primary py-2 px-6 text-[10px] uppercase tracking-widest">Sync</button>
                   </div>
@@ -962,7 +962,7 @@ const VaultView = ({ subjects, setSubjects }: { subjects: Subject[], setSubjects
                               value={textInput}
                               onChange={(e) => setTextInput(e.target.value)}
                               placeholder="RAW_TEXT_INPUT..."
-                              className="input-lumina w-full h-40 resize-none p-4 text-[10px] uppercase tracking-widest leading-relaxed"
+                              className="input-lumina w-full h-40 resize-none p-4 text-[10px] placeholder:uppercase tracking-widest leading-relaxed"
                             />
                             <div className="flex gap-3">
                               <button 
@@ -1073,7 +1073,7 @@ const VaultView = ({ subjects, setSubjects }: { subjects: Subject[], setSubjects
   );
 };
 
-const ProfileView = ({ user, setUser }: { user: UserProfile, setUser: React.Dispatch<React.SetStateAction<UserProfile>> }) => {
+const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: React.Dispatch<React.SetStateAction<UserProfile>>, subjects: Subject[] }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(user.name);
   const [editAvatar, setEditAvatar] = useState(user.avatar);
@@ -1097,12 +1097,14 @@ const ProfileView = ({ user, setUser }: { user: UserProfile, setUser: React.Disp
     { day: 30, retention: 40 },
   ];
 
-  const focusData = [
-    { name: 'Quantum', value: 400 },
-    { name: 'History', value: 300 },
-    { name: 'Logic', value: 200 },
-    { name: 'Design', value: 100 },
-  ];
+  const focusData = subjects.map(subject => {
+    const value = subject.topics.reduce((acc, topic) => acc + (topic.progress * topic.chapters), 0);
+    return { name: subject.name.split(' ')[0], value: value > 0 ? value : 10 };
+  }).filter(d => d.value > 0).slice(0, 5);
+
+  if (focusData.length === 0) {
+    focusData.push({ name: 'None', value: 100 });
+  }
 
   const COLORS = ['#d4ff00', '#ffcc00', '#00ffcc', '#ff00cc'];
 
@@ -1140,14 +1142,14 @@ const ProfileView = ({ user, setUser }: { user: UserProfile, setUser: React.Disp
                       type="text" 
                       value={editName} 
                       onChange={(e) => setEditName(e.target.value)}
-                      className="input-lumina text-center font-bold text-xs uppercase tracking-widest"
+                      className="input-lumina text-center font-bold text-xs placeholder:uppercase tracking-widest"
                     />
                     <input 
                       type="text" 
                       value={editAvatar} 
                       onChange={(e) => setEditAvatar(e.target.value)}
                       placeholder="AVATAR_URL"
-                      className="input-lumina text-center text-[10px] uppercase tracking-widest"
+                      className="input-lumina text-center text-[10px] placeholder:uppercase tracking-widest"
                     />
                     <div className="flex gap-2">
                       <button onClick={saveProfile} className="btn-primary flex-1 py-2 text-[10px] uppercase tracking-widest">Save</button>
@@ -1442,6 +1444,54 @@ export default function App() {
         }
       ] 
     },
+    {
+      id: '3',
+      name: 'Computer Science',
+      topics: [
+        {
+          id: 't4',
+          name: 'Data Structures',
+          progress: 80,
+          description: 'Fundamental ways to organize and store data efficiently.',
+          imageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1000',
+          lastReviewed: 'Yesterday',
+          nextReview: 'Tomorrow',
+          chapters: 15,
+          masteryLevel: 4,
+          assets: []
+        },
+        {
+          id: 't5',
+          name: 'Machine Learning',
+          progress: 10,
+          description: 'Algorithms that improve automatically through experience.',
+          imageUrl: 'https://images.unsplash.com/photo-1527474305487-b87b222841cc?auto=format&fit=crop&q=80&w=1000',
+          lastReviewed: '1 month ago',
+          nextReview: 'Today',
+          chapters: 20,
+          masteryLevel: 1,
+          assets: []
+        }
+      ]
+    },
+    {
+      id: '4',
+      name: 'Neuroscience',
+      topics: [
+        {
+          id: 't6',
+          name: 'Synaptic Plasticity',
+          progress: 55,
+          description: 'The ability of synapses to strengthen or weaken over time.',
+          imageUrl: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&q=80&w=1000',
+          lastReviewed: '4 days ago',
+          nextReview: 'In 2 days',
+          chapters: 6,
+          masteryLevel: 3,
+          assets: []
+        }
+      ]
+    }
   ]);
 
   const [user, setUser] = useState<UserProfile>({
@@ -1543,7 +1593,7 @@ export default function App() {
           )}
           {view === 'profile' && (
             <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ProfileView user={user} setUser={setUser} />
+              <ProfileView user={user} setUser={setUser} subjects={subjects} />
             </motion.div>
           )}
           {view === 'notifications' && (
