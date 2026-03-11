@@ -47,8 +47,12 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  LineChart,
+  Line,
+  CartesianGrid
 } from 'recharts';
+import { GoogleGenAI } from "@google/genai";
 
 // --- Types ---
 type View = 'auth' | 'overview' | 'focus' | 'vault' | 'profile' | 'notifications';
@@ -82,6 +86,7 @@ interface UserProfile {
   streak: number;
   totalCards: number;
   globalRank: number;
+  lastActive: string;
 }
 
 interface Notification {
@@ -542,6 +547,8 @@ const FocusView = ({ settings, streak, activeTopic, onFinish }: { settings: Pomo
   const [phase, setPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
   const [selectedMusic, setSelectedMusic] = useState('None');
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [hardcoreMode, setHardcoreMode] = useState(false);
+  const [sessionFailed, setSessionFailed] = useState(false);
 
   useEffect(() => {
     let timer: any;
@@ -552,6 +559,32 @@ const FocusView = ({ settings, streak, activeTopic, onFinish }: { settings: Pomo
     }
     return () => clearInterval(timer);
   }, [isActive, timeLeft]);
+
+  useEffect(() => {
+    if (!isActive || !hardcoreMode) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        setIsActive(false);
+        setSessionFailed(true);
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsActive(false);
+        setSessionFailed(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [isActive, hardcoreMode]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -573,6 +606,22 @@ const FocusView = ({ settings, streak, activeTopic, onFinish }: { settings: Pomo
     if (newMode === 'work') setTimeLeft(settings.workTime * 60);
     if (newMode === 'short') setTimeLeft(settings.shortBreak * 60);
     if (newMode === 'long') setTimeLeft(settings.longBreak * 60);
+  };
+
+  const toggleHardcore = async () => {
+    if (!hardcoreMode) {
+      try {
+        await document.documentElement.requestFullscreen();
+        setHardcoreMode(true);
+      } catch (err) {
+        console.error("Error attempting to enable full-screen mode:", err);
+      }
+    } else {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+      setHardcoreMode(false);
+    }
   };
 
   const handleFinish = () => {
@@ -622,6 +671,14 @@ const FocusView = ({ settings, streak, activeTopic, onFinish }: { settings: Pomo
               {m.label}
             </button>
           ))}
+          <button 
+            onClick={toggleHardcore}
+            className={`px-6 py-1.5 rounded text-[10px] font-bold transition-all border flex items-center gap-2 ${
+              hardcoreMode ? 'bg-red-500 text-white border-red-500' : 'text-lumina-text/40 border-lumina-border hover:bg-white/5'
+            }`}
+          >
+            <ShieldCheck size={12} /> HARDCORE
+          </button>
         </div>
         
         <div className="relative flex items-center justify-center mb-16">
@@ -714,6 +771,42 @@ const FocusView = ({ settings, streak, activeTopic, onFinish }: { settings: Pomo
               </motion.div>
             </motion.div>
           )}
+
+          {sessionFailed && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm"
+            >
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-full max-w-md bg-lumina-card border border-red-500/50 p-10 rounded-2xl text-center"
+              >
+                <div className="w-16 h-16 bg-red-500/20 rounded flex items-center justify-center text-red-500 mx-auto mb-8 shadow-xl">
+                  <Lock size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-red-500 mb-2 uppercase tracking-tighter">NEURAL LINK SEVERED</h3>
+                <p className="text-xs text-lumina-text/40 mb-10 uppercase tracking-widest">Hardcore mode violation detected. Focus compromised.</p>
+                
+                <div className="bg-lumina-bg border border-red-500/30 p-6 rounded-xl mb-10 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Zap size={20} className="text-red-500" />
+                    <span className="text-[10px] font-bold text-lumina-text uppercase tracking-widest">XP_PENALTY</span>
+                  </div>
+                  <span className="text-xl font-bold text-red-500">-100</span>
+                </div>
+
+                <button 
+                  onClick={() => { setSessionFailed(false); onFinish(-100); }}
+                  className="w-full py-4 bg-red-500/10 text-red-500 border border-red-500/50 rounded-xl text-xs font-bold uppercase tracking-[0.2em] hover:bg-red-500/20 transition-colors"
+                >
+                  Acknowledge
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
@@ -750,6 +843,7 @@ const VaultView = ({ subjects, setSubjects }: { subjects: Subject[], setSubjects
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadType, setUploadType] = useState<'PDF' | 'Text' | 'Notes' | null>(null);
   const [textInput, setTextInput] = useState('');
+  const [showInterrogation, setShowInterrogation] = useState(false);
 
   const addSubject = () => {
     if (newSubjectName.trim() && subjects.length < 10) {
@@ -1054,9 +1148,58 @@ const VaultView = ({ subjects, setSubjects }: { subjects: Subject[], setSubjects
                             <div className="text-xs font-bold text-lumina-accent uppercase">{previewTopic.nextReview}</div>
                           </div>
                         </div>
+
+                        {/* Predictive Memory Decay Curve */}
+                        <div className="p-6 bg-lumina-bg border border-lumina-border rounded-xl">
+                          <h4 className="text-[10px] font-bold text-lumina-text mb-4 flex items-center gap-2 uppercase tracking-widest">
+                            <TrendingUp size={14} className="text-lumina-accent" />
+                            Memory_Decay_Prediction
+                          </h4>
+                          <div className="h-32 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={[
+                                { day: 0, retention: 100 },
+                                { day: 1, retention: 80 + (previewTopic.masteryLevel * 2) },
+                                { day: 2, retention: 60 + (previewTopic.masteryLevel * 4) },
+                                { day: 3, retention: 40 + (previewTopic.masteryLevel * 6) },
+                                { day: 7, retention: 20 + (previewTopic.masteryLevel * 8) },
+                              ]}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                <XAxis dataKey="day" stroke="#ffffff30" fontSize={8} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#ffffff30" fontSize={8} tickLine={false} axisLine={false} />
+                                <Tooltip 
+                                  contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '8px', fontSize: '10px' }}
+                                  itemStyle={{ color: '#d4ff00' }}
+                                />
+                                <Line type="monotone" dataKey="retention" stroke="#d4ff00" strokeWidth={2} dot={{ fill: '#d4ff00', r: 3 }} />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
                       </div>
-                      <button className="btn-primary mt-8 w-full py-4 text-xs uppercase tracking-widest">Continue_Progress</button>
+                      <div className="flex gap-3 mt-8">
+                        <button 
+                          onClick={() => setShowInterrogation(true)}
+                          className="flex-1 py-4 bg-lumina-bg border border-lumina-accent text-lumina-accent rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-lumina-accent/10 transition-colors"
+                        >
+                          Interrogate
+                        </button>
+                        <button className="flex-[2] btn-primary py-4 text-xs uppercase tracking-widest">Continue_Progress</button>
+                      </div>
                     </motion.div>
+                  )}
+                </AnimatePresence>
+                
+                <AnimatePresence>
+                  {showInterrogation && previewTopic && (
+                    <SocraticInterrogation 
+                      topic={previewTopic} 
+                      onClose={() => setShowInterrogation(false)} 
+                      onComplete={(xp) => {
+                        setShowInterrogation(false);
+                        // Add XP logic here if needed, or pass it up
+                      }} 
+                    />
                   )}
                 </AnimatePresence>
               </motion.div>
@@ -1077,6 +1220,14 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(user.name);
   const [editAvatar, setEditAvatar] = useState(user.avatar);
+
+  const isStreakBroken = user.streak === 0 && user.xp >= 500;
+
+  const repairStreak = () => {
+    if (user.xp >= 500) {
+      setUser({ ...user, streak: 1, xp: user.xp - 500, lastActive: new Date().toISOString() });
+    }
+  };
 
   const saveProfile = () => {
     setUser({ ...user, name: editName, avatar: editAvatar });
@@ -1174,9 +1325,17 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
                     <div className="text-[8px] font-bold text-lumina-text/30 uppercase tracking-widest mb-1">Level</div>
                     <div className="text-xl font-bold text-lumina-text">{user.level}</div>
                   </div>
-                  <div className="p-4 bg-lumina-bg border border-lumina-border rounded-xl">
+                  <div className="p-4 bg-lumina-bg border border-lumina-border rounded-xl relative">
                     <div className="text-[8px] font-bold text-lumina-text/30 uppercase tracking-widest mb-1">Streak</div>
-                    <div className="text-xl font-bold text-lumina-accent">{user.streak}D</div>
+                    <div className={`text-xl font-bold ${user.streak > 0 ? 'text-lumina-accent' : 'text-red-500'}`}>{user.streak}D</div>
+                    {isStreakBroken && (
+                      <button 
+                        onClick={repairStreak}
+                        className="absolute bottom-2 right-2 text-[8px] font-bold bg-lumina-accent/10 text-lumina-accent px-2 py-1 rounded border border-lumina-accent/30 hover:bg-lumina-accent/20 transition-colors uppercase tracking-widest"
+                      >
+                        Repair (-500 XP)
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1390,6 +1549,183 @@ const NotificationsView = ({ notifications, setNotifications }: { notifications:
   );
 };
 
+const CommandPalette = ({ isOpen, setIsOpen, setView }: { isOpen: boolean, setIsOpen: (o: boolean) => void, setView: (v: View) => void }) => {
+  const [search, setSearch] = useState('');
+  
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsOpen(!isOpen);
+      }
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, setIsOpen]);
+
+  if (!isOpen) return null;
+
+  const commands = [
+    { name: 'Go to Profile', action: () => { setView('profile'); setIsOpen(false); }, icon: <User size={14} /> },
+    { name: 'Go to Vault', action: () => { setView('vault'); setIsOpen(false); }, icon: <Database size={14} /> },
+    { name: 'Start Focus Session', action: () => { setView('focus'); setIsOpen(false); }, icon: <Timer size={14} /> },
+    { name: 'View Overview', action: () => { setView('overview'); setIsOpen(false); }, icon: <LayoutDashboard size={14} /> },
+    { name: 'Log Out', action: () => { setView('auth'); setIsOpen(false); }, icon: <LogOut size={14} /> },
+  ];
+
+  const filtered = commands.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[20vh] bg-black/60 backdrop-blur-sm" onClick={() => setIsOpen(false)}>
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: -20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: -20 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-lg bg-lumina-card border border-lumina-border rounded-xl shadow-2xl overflow-hidden font-mono"
+      >
+        <div className="p-4 border-b border-lumina-border flex items-center gap-3">
+          <Target size={18} className="text-lumina-accent" />
+          <input 
+            autoFocus
+            type="text" 
+            placeholder="TYPE COMMAND..." 
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="bg-transparent border-none outline-none text-lumina-text w-full text-xs uppercase tracking-widest placeholder:text-lumina-text/30"
+          />
+        </div>
+        <div className="max-h-64 overflow-y-auto p-2 custom-scrollbar">
+          {filtered.map((cmd, i) => (
+            <button 
+              key={i}
+              onClick={cmd.action}
+              className="w-full text-left px-4 py-3 rounded-lg hover:bg-lumina-bg flex items-center gap-3 text-xs text-lumina-text/70 hover:text-lumina-text uppercase tracking-widest transition-colors"
+            >
+              <span className="text-lumina-accent">{cmd.icon}</span>
+              {cmd.name}
+            </button>
+          ))}
+          {filtered.length === 0 && (
+            <div className="p-4 text-center text-[10px] text-lumina-text/30 uppercase tracking-widest">No commands found.</div>
+          )}
+        </div>
+        <div className="p-2 border-t border-lumina-border bg-lumina-bg/50 text-[9px] text-lumina-text/30 text-center uppercase tracking-widest">
+          Use <span className="text-lumina-accent">↑↓</span> to navigate, <span className="text-lumina-accent">Enter</span> to select, <span className="text-lumina-accent">Esc</span> to close
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+const SocraticInterrogation = ({ topic, onClose, onComplete }: { topic: Topic, onClose: () => void, onComplete: (xp: number) => void }) => {
+  const [messages, setMessages] = useState<{role: 'ai' | 'user', text: string}[]>([]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [isGrading, setIsGrading] = useState(false);
+  const [grade, setGrade] = useState<{score: number, feedback: string} | null>(null);
+  
+  useEffect(() => {
+    const initChat = async () => {
+      setIsTyping(true);
+      try {
+        const ai = new GoogleGenAI({ apiKey: (import.meta as any).env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '' });
+        const response = await ai.models.generateContent({
+          model: "gemini-3.1-flash-preview",
+          contents: `You are a strict but fair Socratic tutor. The student is studying: ${topic.name}. Description: ${topic.description}. Ask them ONE thought-provoking question to test their understanding. Keep it under 3 sentences.`,
+        });
+        setMessages([{ role: 'ai', text: response.text || 'Could not generate question.' }]);
+      } catch (e) {
+        setMessages([{ role: 'ai', text: 'Neural link failed. Ensure API key is set.' }]);
+      }
+      setIsTyping(false);
+    };
+    initChat();
+  }, [topic]);
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    const userMsg = input;
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setInput('');
+    setIsGrading(true);
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: (import.meta as any).env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '' });
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-flash-preview",
+        contents: `The student is studying ${topic.name}. You asked: "${messages[0]?.text}". The student answered: "${userMsg}". Grade their answer out of 100. Provide brief feedback. Return ONLY JSON in this format: {"score": number, "feedback": "string"}`,
+        config: { responseMimeType: "application/json" }
+      });
+      const data = JSON.parse(response.text || '{}');
+      setGrade(data);
+    } catch (e) {
+      setGrade({ score: 0, feedback: 'Error grading response.' });
+    }
+    setIsGrading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm">
+      <div className="w-full max-w-2xl bg-lumina-card border border-lumina-border p-8 rounded-2xl relative flex flex-col h-[80vh]">
+        <button onClick={onClose} className="absolute top-6 right-6 text-lumina-text/30 hover:text-lumina-text">
+          <ArrowLeft size={18} />
+        </button>
+        <h3 className="text-xl font-bold text-lumina-text mb-1 uppercase tracking-tighter flex items-center gap-2">
+          <Brain size={20} className="text-lumina-accent" /> Socratic Interrogation
+        </h3>
+        <p className="text-[10px] text-lumina-text/30 mb-6 uppercase tracking-widest">Topic: {topic.name}</p>
+
+        <div className="flex-1 overflow-y-auto mb-4 space-y-4 custom-scrollbar pr-2">
+          {messages.map((m, i) => (
+            <div key={i} className={`p-4 rounded-xl text-xs uppercase tracking-widest leading-relaxed ${m.role === 'ai' ? 'bg-lumina-bg border border-lumina-border text-lumina-text/80' : 'bg-lumina-accent/10 border border-lumina-accent/30 text-lumina-accent ml-8'}`}>
+              <span className="font-bold text-[9px] opacity-50 block mb-2">{m.role === 'ai' ? 'SYSTEM' : 'USER'}</span>
+              {m.text}
+            </div>
+          ))}
+          {isTyping && <div className="text-[10px] text-lumina-accent animate-pulse uppercase tracking-widest">System is formulating query...</div>}
+          {isGrading && <div className="text-[10px] text-lumina-accent animate-pulse uppercase tracking-widest">Analyzing response patterns...</div>}
+          
+          {grade && (
+            <div className="p-6 bg-lumina-bg border border-lumina-accent rounded-xl mt-4">
+              <div className="text-2xl font-bold text-lumina-accent mb-2">SCORE: {grade.score}/100</div>
+              <div className="text-xs text-lumina-text/80 uppercase tracking-widest leading-relaxed">{grade.feedback}</div>
+              <button 
+                onClick={() => { onComplete(grade.score * 5); onClose(); }}
+                className="btn-primary w-full mt-6 py-3 text-[10px] uppercase tracking-widest"
+              >
+                Claim {grade.score * 5} XP & Exit
+              </button>
+            </div>
+          )}
+        </div>
+
+        {!grade && (
+          <div className="flex gap-2">
+            <textarea 
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="ENTER_RESPONSE..."
+              className="input-lumina flex-1 h-20 resize-none text-xs placeholder:uppercase tracking-widest"
+              disabled={isTyping || isGrading}
+            />
+            <button 
+              onClick={handleSend}
+              disabled={isTyping || isGrading || !input.trim()}
+              className="btn-primary px-6 flex items-center justify-center disabled:opacity-50"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // --- Main App ---
 
 export default function App() {
@@ -1500,9 +1836,10 @@ export default function App() {
     rank: 'Grandmaster Scholar',
     level: 42,
     xp: 8450,
-    streak: 12,
+    streak: 0,
     totalCards: 1240,
-    globalRank: 154
+    globalRank: 154,
+    lastActive: new Date(Date.now() - 86400000 * 2).toISOString()
   });
 
   const handleJumpToFocus = (topic: Topic) => {
@@ -1519,14 +1856,33 @@ export default function App() {
       })));
 
       // Update user XP
-      setUser(prev => ({
-        ...prev,
-        xp: prev.xp + xpGain,
-        level: Math.floor((prev.xp + xpGain) / 200) + 1
-      }));
+      setUser(prev => {
+        const now = new Date();
+        const last = new Date(prev.lastActive);
+        const diffDays = Math.floor((now.getTime() - last.getTime()) / (1000 * 3600 * 24));
+        
+        let newStreak = prev.streak;
+        if (diffDays === 1) {
+          newStreak += 1;
+        } else if (diffDays > 1) {
+          newStreak = 1;
+        } else if (prev.streak === 0) {
+          newStreak = 1;
+        }
+
+        return {
+          ...prev,
+          xp: prev.xp + xpGain,
+          level: Math.floor((prev.xp + xpGain) / 200) + 1,
+          streak: newStreak,
+          lastActive: now.toISOString()
+        };
+      });
 
       setActiveTopic(null);
-      setView('overview');
+      if (xpGain > 0) {
+        setView('overview');
+      }
     }
   };
 
@@ -1563,10 +1919,13 @@ export default function App() {
     longBreak: 15
   });
 
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
     <div className="min-h-screen bg-lumina-bg font-mono text-lumina-text selection:bg-lumina-accent/30">
+      <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setIsCommandPaletteOpen} setView={setView} />
       <Navbar currentView={view} setView={setView} unreadCount={unreadCount} />
       
       <main className="relative">
