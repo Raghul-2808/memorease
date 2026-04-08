@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user profile and learning statistics.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier for the user." },
+        "name": { "type": "string", "description": "Display name of the user." },
+        "avatar": { "type": "string", "description": "URL to the user's avatar image." },
+        "rank": { "type": "string", "description": "Current rank of the user (e.g., Novice, Scholar)." },
+        "level": { "type": "integer", "description": "Current neural level." },
+        "xp": { "type": "integer", "description": "Total experience points earned." },
+        "streak": { "type": "integer", "description": "Current daily focus streak." },
+        "totalCards": { "type": "integer", "description": "Total number of intellectual assets synchronized." },
+        "globalRank": { "type": "integer", "description": "User's position in the global leaderboard." },
+        "lastActive": { "type": "string", "format": "date-time", "description": "Last time the user was active." }
+      },
+      "required": ["uid", "name", "level", "xp", "streak"]
+    },
+    "Subject": {
+      "title": "Subject Directory",
+      "description": "A top-level category for learning topics.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "uid": { "type": "string", "description": "The owner of this subject." }
+      },
+      "required": ["id", "name", "uid"]
+    },
+    "Topic": {
+      "title": "Learning Topic",
+      "description": "A specific module within a subject.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "progress": { "type": "integer" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "lastReviewed": { "type": "string" },
+        "nextReview": { "type": "string" },
+        "chapters": { "type": "integer" },
+        "masteryLevel": { "type": "integer" },
+        "assets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["id", "subjectId", "uid", "name", "progress"]
+    },
+    "Notification": {
+      "title": "User Notification",
+      "description": "Alerts and updates for the user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "time": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["id", "uid", "title", "message", "time"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "User" },
+      "description": "User profile data."
+    },
+    "/subjects/{subjectId}": {
+      "schema": { "$ref": "Subject" },
+      "description": "Subject directories owned by users."
+    },
+    "/topics/{topicId}": {
+      "schema": { "$ref": "Topic" },
+      "description": "Learning topics within subjects."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "Notification" },
+      "description": "User notifications."
+    }
+  }
+}

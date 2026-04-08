@@ -1,49 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-lumina-bg: #0f0f0f;
-  --color-lumina-card: #1a1a1a;
+  --color-lumina-bg: #050505;
+  --color-lumina-card: #0d0d0d;
   --color-lumina-accent: #d4ff00;
   --color-lumina-secondary: #ffcc00;
   --color-lumina-text: #ffffff;
-  --color-lumina-border: #2a2a2a;
+  --color-lumina-border: #1a1a1a;
   
-  --font-serif: "JetBrains Mono", monospace;
-  --font-sans: "JetBrains Mono", monospace;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 @layer base {
   body {
     @apply bg-lumina-bg text-lumina-text font-sans antialiased selection:bg-lumina-accent/30;
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
 }
 
 .glass-lumina {
-  background: rgba(26, 26, 26, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--color-lumina-border);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  background: rgba(13, 13, 13, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
 }
 
 .text-gradient {
-  background: linear-gradient(to right, #d4ff00, #ffcc00);
+  background: linear-gradient(135deg, #d4ff00 0%, #ffcc00 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .btn-primary {
-  @apply px-8 py-3 bg-lumina-accent text-black rounded-xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-lumina-accent/10;
+  @apply px-8 py-3 bg-lumina-accent text-black rounded-full font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-lumina-accent/20 flex items-center justify-center gap-2;
 }
 
 .btn-secondary {
-  @apply px-8 py-3 bg-lumina-card text-lumina-text border border-lumina-border rounded-xl font-bold transition-all hover:bg-lumina-border active:scale-95;
+  @apply px-8 py-3 bg-white/5 text-lumina-text border border-white/10 rounded-full font-bold transition-all hover:bg-white/10 active:scale-95 flex items-center justify-center gap-2;
 }
 
 .input-lumina {
-  @apply w-full bg-lumina-bg border border-lumina-border rounded-xl px-5 py-4 text-lumina-text focus:outline-none focus:ring-2 focus:ring-lumina-accent/20 focus:border-lumina-accent transition-all placeholder:text-lumina-text/20;
+  @apply w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-lumina-text focus:outline-none focus:ring-2 focus:ring-lumina-accent/20 focus:border-lumina-accent/50 transition-all placeholder:text-lumina-text/30;
 }
 
 .card-lumina {
-  @apply bg-lumina-card border border-lumina-border rounded-2xl p-6 transition-all hover:border-lumina-accent/30;
+  @apply bg-lumina-card border border-lumina-border rounded-3xl p-8 transition-all hover:border-lumina-accent/20 hover:shadow-2xl hover:shadow-lumina-accent/5;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-lumina-accent);
 }
