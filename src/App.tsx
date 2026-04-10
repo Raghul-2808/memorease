@@ -917,7 +917,7 @@ const ActivityHeatmap = () => {
   );
 };
 
-const OverviewView = ({ onJumpBack, user, subjects, noteCount, onXpGain }: { onJumpBack: (topic: Topic) => void, user: UserProfile, subjects: Subject[], noteCount: number, onXpGain: (xp: number) => void }) => {
+const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (topic: Topic) => void, user: UserProfile, subjects: Subject[], noteCount: number }) => {
   const allTopics = subjects.flatMap(s => s.topics);
   const currentTopic = allTopics.find(t => t.progress < 100) || allTopics[0] || {
     id: 't1',
@@ -1172,28 +1172,7 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount, onXpGain }: { onJ
             )}
           </div>
 
-          {/* New Feature Widgets Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-            {/* Triage Mode Button */}
-            <div className="min-w-0">
-              <TriageModeWidget subjects={subjects} user={user} onJumpToFocus={onJumpBack} />
-            </div>
-
-            {/* Distraction Interceptor */}
-            <div className="min-w-0">
-              <DistractionInterceptor topics={subjects.flatMap(s => s.topics)} user={user} onXpGain={onXpGain} />
-            </div>
-
-            {/* Class Raid Widget */}
-            <div className="min-w-0">
-              <ClassRaidWidget user={user} />
-            </div>
-          </div>
-
-          {/* Activity Heatmap */}
-          <div className="mt-6">
-            <ActivityHeatmap />
-          </div>
+          {/* Features removed from metrics - available as standalone components */}
         </div>
       </div>
     </div>
@@ -1854,7 +1833,7 @@ const VaultView = ({
               className="btn-primary flex items-center gap-2"
             >
               <Plus size={18} />
-              New Chapter
+              Add Notes
             </button>
           </div>
         </header>
@@ -1898,7 +1877,7 @@ const VaultView = ({
                 <div className="relative">
                   <input 
                     type="text" 
-                    placeholder="New Directory..."
+                    placeholder="New Subject..."
                     value={newSubjectName}
                     onChange={(e) => setNewSubjectName(e.target.value)}
                     onKeyDown={(e) => {
@@ -1975,7 +1954,7 @@ const VaultView = ({
                     <div className="relative">
                       <input 
                         type="text" 
-                        placeholder="New Chapter Name..."
+                        placeholder="New Note Name..."
                         value={newTopicName}
                         onChange={(e) => setNewTopicName(e.target.value)}
                         onKeyDown={(e) => {
@@ -2277,7 +2256,8 @@ const VaultView = ({
                 </div>
 
                 <button 
-                  onClick={() => { setPreviewTopic(null); /* Navigate to focus */ }}
+                  onClick={() => { if (previewTopic) { onJumpToFocus(previewTopic); setPreviewTopic(null); } }}
+                  data-testid="initialize-focus-btn"
                   className="btn-primary w-full py-4 text-xs uppercase tracking-[0.2em]"
                 >
                   Initialize Focus Session
@@ -4148,13 +4128,7 @@ export default function App() {
           )}
           {user && view === 'overview' && (
             <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <OverviewView onJumpBack={handleJumpToFocus} user={user} subjects={subjects} noteCount={noteCount} onXpGain={(xp: number) => {
-                if (user) {
-                  const newXp = user.xp + xp;
-                  setUser({ ...user, xp: newXp, rank: getMemorEaseRank(newXp), level: Math.floor(newXp / 100) + 1 });
-                  supabase.from('users').update({ xp: newXp, rank: getMemorEaseRank(newXp), level: Math.floor(newXp / 100) + 1 }).eq('uid', user.uid);
-                }
-              }} />
+              <OverviewView onJumpBack={handleJumpToFocus} user={user} subjects={subjects} noteCount={noteCount} />
             </motion.div>
           )}
           {user && view === 'focus' && (
