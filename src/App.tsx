@@ -63,7 +63,13 @@ import {
   Headphones,
   Gift,
   PartyPopper,
-  TimerReset
+  TimerReset,
+  Siren,
+  Crosshair,
+  Clipboard,
+  Sword,
+  HeartPulse,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -837,7 +843,7 @@ const getRankColor = (rank: string) => {
   return 'from-gray-500 to-gray-600';
 };
 
-const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (topic: Topic) => void, user: UserProfile, subjects: Subject[], noteCount: number }) => {
+const OverviewView = ({ onJumpBack, user, subjects, noteCount, onXpGain }: { onJumpBack: (topic: Topic) => void, user: UserProfile, subjects: Subject[], noteCount: number, onXpGain: (xp: number) => void }) => {
   const allTopics = subjects.flatMap(s => s.topics);
   const currentTopic = allTopics.find(t => t.progress < 100) || allTopics[0] || {
     id: 't1',
@@ -1090,6 +1096,24 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (
                 <span className="text-[10px] text-lumina-text/10 mt-1">Go to Vault to add subjects</span>
               </div>
             )}
+          </div>
+
+          {/* New Feature Widgets Row */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-6">
+            {/* Triage Mode Button */}
+            <div className="md:col-span-4">
+              <TriageModeWidget subjects={subjects} user={user} onJumpToFocus={onJumpBack} />
+            </div>
+
+            {/* Distraction Interceptor */}
+            <div className="md:col-span-4">
+              <DistractionInterceptor topics={subjects.flatMap(s => s.topics)} user={user} onXpGain={onXpGain} />
+            </div>
+
+            {/* Class Raid Widget */}
+            <div className="md:col-span-4">
+              <ClassRaidWidget user={user} />
+            </div>
           </div>
         </div>
       </div>
@@ -1919,6 +1943,11 @@ const VaultView = ({
                       <p className="text-xs text-lumina-text/20 uppercase tracking-widest">No neural chapters synchronized yet.</p>
                     </div>
                   )}
+                </div>
+
+                {/* Magic Drop Zone */}
+                <div className="mt-8">
+                  <MagicDropZone user={user} activeSubjectId={activeSubjectId} onAddTopic={onAddTopic} />
                 </div>
               </motion.div>
             ) : (
@@ -3066,6 +3095,575 @@ const getMemorEaseRank = (xp: number) => {
   return 'Eternal';
 };
 
+// ========================================
+// FEATURE 1: TRIAGE MODE (24-Hour Panic Button)
+// ========================================
+const TriageModeWidget = ({ subjects, user, onJumpToFocus }: { subjects: Subject[], user: UserProfile, onJumpToFocus: (t: Topic) => void }) => {
+  const [isTriageActive, setIsTriageActive] = useState(false);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+
+  const fadingTopics = subjects.flatMap(s => s.topics).filter(t => 
+    t.progress < 50 || t.masteryLevel < 3 || t.lastReviewed === 'Never'
+  );
+
+  const toggleTriage = () => {
+    setIsTriageActive(!isTriageActive);
+    setCurrentCardIndex(0);
+    setShowAnswer(false);
+  };
+
+  const nextCard = () => {
+    setShowAnswer(false);
+    setCurrentCardIndex(prev => (prev + 1) % Math.max(fadingTopics.length, 1));
+  };
+
+  if (!isTriageActive) {
+    return (
+      <button
+        onClick={toggleTriage}
+        data-testid="triage-mode-btn"
+        className="w-full card-lumina p-5 border-red-500/30 hover:border-red-500/60 transition-all group cursor-pointer flex items-center gap-4"
+      >
+        <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <Siren size={22} className="text-red-400" />
+        </div>
+        <div className="flex-1 text-left">
+          <div className="text-sm font-bold text-red-400 uppercase tracking-tight">Triage Mode</div>
+          <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest">{fadingTopics.length} fading topics</div>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
+          <span className="text-xs font-bold text-red-400">{fadingTopics.length}</span>
+        </div>
+      </button>
+    );
+  }
+
+  const currentTopic = fadingTopics[currentCardIndex % Math.max(fadingTopics.length, 1)];
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center p-6"
+      style={{ background: 'radial-gradient(ellipse at center, rgba(127,29,29,0.15) 0%, rgba(0,0,0,0.95) 70%)' }}
+    >
+      <div className="max-w-2xl w-full">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-red-400 text-[10px] font-bold uppercase tracking-[0.3em]">Emergency Triage Active</span>
+          </div>
+          <button 
+            onClick={toggleTriage}
+            data-testid="exit-triage-btn"
+            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text/40 hover:text-lumina-text uppercase tracking-widest transition-all"
+          >
+            Exit Triage
+          </button>
+        </div>
+
+        {fadingTopics.length > 0 && currentTopic ? (
+          <motion.div
+            key={currentCardIndex}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="card-lumina p-10 border-red-500/20 relative overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500" />
+            
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-[10px] font-bold text-red-400/60 uppercase tracking-widest">Card {currentCardIndex + 1} of {fadingTopics.length}</span>
+              <div className="flex items-center gap-2">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className={`w-1.5 h-4 rounded-full ${i < currentTopic.masteryLevel ? 'bg-red-400' : 'bg-white/10'}`} />
+                ))}
+              </div>
+            </div>
+
+            <h2 className="text-3xl font-display font-bold text-lumina-text mb-3 tracking-tight">{currentTopic.name}</h2>
+            <p className="text-sm text-lumina-text/40 mb-8 leading-relaxed">{currentTopic.description}</p>
+
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="bg-white/5 rounded-xl p-3 text-center">
+                <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Progress</div>
+                <div className="text-lg font-bold text-red-400">{currentTopic.progress}%</div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-3 text-center">
+                <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Mastery</div>
+                <div className="text-lg font-bold text-lumina-text">Lv.{currentTopic.masteryLevel}</div>
+              </div>
+              <div className="bg-white/5 rounded-xl p-3 text-center">
+                <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Last Seen</div>
+                <div className="text-lg font-bold text-orange-400">{currentTopic.lastReviewed}</div>
+              </div>
+            </div>
+
+            <AnimatePresence mode="wait">
+              {showAnswer ? (
+                <motion.div
+                  key="answer"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-lumina-accent/5 border border-lumina-accent/20 rounded-2xl p-6 mb-8"
+                >
+                  <p className="text-sm text-lumina-text/60 leading-relaxed">
+                    This topic covers key concepts in <strong className="text-lumina-accent">{currentTopic.name}</strong>. 
+                    You have {currentTopic.chapters} chapter{currentTopic.chapters > 1 ? 's' : ''} to review. 
+                    Focus on reinforcing weak areas to prevent further decay.
+                  </p>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+
+            <div className="flex gap-3">
+              {!showAnswer ? (
+                <button
+                  onClick={() => setShowAnswer(true)}
+                  data-testid="triage-reveal-btn"
+                  className="flex-1 py-4 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-lumina-text uppercase tracking-widest hover:bg-white/10 transition-all"
+                >
+                  Reveal Details
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={nextCard}
+                    data-testid="triage-skip-btn"
+                    className="flex-1 py-4 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-lumina-text/40 uppercase tracking-widest hover:bg-white/10 transition-all"
+                  >
+                    Skip
+                  </button>
+                  <button
+                    onClick={() => { toggleTriage(); onJumpToFocus(currentTopic); }}
+                    data-testid="triage-focus-btn"
+                    className="flex-[2] py-4 rounded-xl bg-red-500 text-white text-sm font-bold uppercase tracking-widest hover:bg-red-600 transition-all shadow-[0_0_30px_rgba(239,68,68,0.3)]"
+                  >
+                    Focus Now
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        ) : (
+          <div className="card-lumina p-16 text-center">
+            <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
+              <CheckCheck size={40} className="text-green-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-lumina-text mb-2">All Clear!</h3>
+            <p className="text-xs text-lumina-text/40 uppercase tracking-widest">No topics are currently in danger of fading.</p>
+            <button onClick={toggleTriage} className="mt-6 btn-primary">Return to Dashboard</button>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+// ========================================
+// FEATURE 2: MAGIC DROP (Auto-Parsing Vault)
+// ========================================
+const MagicDropZone = ({ user, activeSubjectId, onAddTopic }: { user: UserProfile, activeSubjectId: string | null, onAddTopic: (subjectId: string, name: string) => void }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [parsedCards, setParsedCards] = useState<string[]>([]);
+  const [showParsed, setShowParsed] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => setIsDragging(false);
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const text = e.dataTransfer.getData('text/plain');
+    if (text) {
+      parseContent(text);
+      return;
+    }
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        const content = await file.text();
+        parseContent(content);
+      }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const text = e.clipboardData.getData('text/plain');
+    if (text.length > 50) {
+      e.preventDefault();
+      parseContent(text);
+    }
+  };
+
+  const parseContent = (text: string) => {
+    const lines = text.split(/\n\n|\n(?=[A-Z0-9])/g)
+      .map(l => l.trim())
+      .filter(l => l.length > 5 && l.length < 200);
+    
+    const cards = lines.length > 0 ? lines.slice(0, 20) : text.match(/.{20,100}/g)?.slice(0, 10) || [];
+    setParsedCards(cards as string[]);
+    setShowParsed(true);
+  };
+
+  const saveAllCards = async () => {
+    if (!activeSubjectId || parsedCards.length === 0) return;
+    setSaving(true);
+    
+    for (const card of parsedCards) {
+      const title = card.substring(0, 60).replace(/[^\w\s]/g, '').trim();
+      if (title) {
+        onAddTopic(activeSubjectId, title);
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+    
+    setSaving(false);
+    setShowParsed(false);
+    setParsedCards([]);
+  };
+
+  return (
+    <>
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onPaste={handlePaste}
+        data-testid="magic-drop-zone"
+        className={`rounded-3xl border-2 border-dashed p-10 text-center transition-all cursor-pointer ${
+          isDragging 
+            ? 'border-lumina-accent bg-lumina-accent/5 scale-[1.02]' 
+            : 'border-white/10 hover:border-white/20 bg-white/[0.02]'
+        }`}
+      >
+        <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center transition-all ${
+          isDragging ? 'bg-lumina-accent/20 scale-110' : 'bg-white/5'
+        }`}>
+          <Clipboard size={28} className={isDragging ? 'text-lumina-accent' : 'text-lumina-text/20'} />
+        </div>
+        <h3 className="text-sm font-bold text-lumina-text mb-1">Magic Drop</h3>
+        <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest leading-relaxed max-w-sm mx-auto">
+          Drop a text file, paste content, or drag notes here. Auto-parses into individual quest nodes.
+        </p>
+      </div>
+
+      <AnimatePresence>
+        {showParsed && parsedCards.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              className="max-w-xl w-full card-lumina p-8 max-h-[80vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-display font-bold text-lumina-text">Parsed Quest Nodes</h2>
+                  <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest mt-1">{parsedCards.length} nodes detected</p>
+                </div>
+                <button onClick={() => { setShowParsed(false); setParsedCards([]); }} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-lumina-text/40 hover:text-lumina-text">
+                  <X size={16} />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto space-y-2 mb-6 pr-2 custom-scrollbar">
+                {parsedCards.map((card, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-lumina-accent/10 flex items-center justify-center shrink-0">
+                      <span className="text-[8px] font-bold text-lumina-accent">{i + 1}</span>
+                    </div>
+                    <span className="text-xs text-lumina-text/60 flex-1 truncate">{card}</span>
+                    <button 
+                      onClick={() => setParsedCards(prev => prev.filter((_, idx) => idx !== i))}
+                      className="text-lumina-text/20 hover:text-red-400 transition-colors shrink-0"
+                    >
+                      <X size={12} />
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowParsed(false); setParsedCards([]); }}
+                  className="flex-1 py-3 rounded-xl bg-white/5 text-xs font-bold text-lumina-text/40 uppercase tracking-widest hover:bg-white/10 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveAllCards}
+                  disabled={saving || !activeSubjectId}
+                  data-testid="save-parsed-cards-btn"
+                  className="flex-[2] py-3 rounded-xl bg-lumina-accent text-black text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : `Save ${parsedCards.length} Nodes`}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+// ========================================
+// FEATURE 3: DISTRACTION INTERCEPTOR
+// ========================================
+const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], user: UserProfile, onXpGain: (xp: number) => void }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
+  const [answered, setAnswered] = useState(false);
+  const [correct, setCorrect] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    if (!isActive) return;
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') return;
+      if (document.visibilityState === 'visible' && topics.length > 0) {
+        const fadingTopics = topics.filter(t => t.progress < 80);
+        if (fadingTopics.length > 0) {
+          const randomTopic = fadingTopics[Math.floor(Math.random() * fadingTopics.length)];
+          setCurrentTopic(randomTopic);
+          setShowModal(true);
+          setAnswered(false);
+          setCorrect(false);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isActive, topics]);
+
+  const handleAnswer = (isCorrect: boolean) => {
+    setAnswered(true);
+    setCorrect(isCorrect);
+    if (isCorrect) {
+      onXpGain(50);
+    }
+    setTimeout(() => {
+      setShowModal(false);
+      setCurrentTopic(null);
+    }, 2000);
+  };
+
+  return (
+    <>
+      <div className="card-lumina p-5 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-lumina-accent/10 border border-lumina-accent/20' : 'bg-white/5 border border-white/10'}`}>
+            <Crosshair size={18} className={isActive ? 'text-lumina-accent' : 'text-lumina-text/30'} />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-lumina-text">Distraction Interceptor</div>
+            <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest">{isActive ? 'Armed - +50 XP per catch' : 'Inactive'}</div>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsActive(!isActive)}
+          data-testid="interceptor-toggle"
+          className={`w-12 h-6 rounded-full relative transition-all ${isActive ? 'bg-lumina-accent' : 'bg-white/10'}`}
+        >
+          <motion.div
+            animate={{ x: isActive ? 26 : 2 }}
+            className={`absolute top-1 w-4 h-4 rounded-full ${isActive ? 'bg-black' : 'bg-white/40'}`}
+          />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {showModal && currentTopic && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[250] flex items-center justify-center p-6"
+            style={{ backdropFilter: 'blur(20px)', background: 'rgba(0,0,0,0.8)' }}
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 20 }}
+              className="max-w-md w-full rounded-3xl p-8 border border-white/10 relative overflow-hidden"
+              style={{ background: 'rgba(10,10,10,0.9)', backdropFilter: 'blur(24px)' }}
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lumina-accent via-cyan-400 to-lumina-accent" />
+              
+              <div className="flex items-center gap-2 mb-6">
+                <Crosshair size={14} className="text-lumina-accent" />
+                <span className="text-[10px] font-bold text-lumina-accent uppercase tracking-[0.3em]">Distraction Intercepted</span>
+              </div>
+
+              <h3 className="text-2xl font-display font-bold text-lumina-text mb-2">{currentTopic.name}</h3>
+              <p className="text-sm text-lumina-text/40 mb-6 leading-relaxed">{currentTopic.description}</p>
+
+              <div className="bg-white/5 rounded-2xl p-4 mb-6">
+                <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest mb-2">Quick Check</div>
+                <p className="text-sm text-lumina-text/60">Can you recall the key concepts from <strong className="text-lumina-accent">{currentTopic.name}</strong>?</p>
+              </div>
+
+              {!answered ? (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleAnswer(false)}
+                    data-testid="interceptor-no"
+                    className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text/40 uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
+                  >
+                    Not Really
+                  </button>
+                  <button
+                    onClick={() => handleAnswer(true)}
+                    data-testid="interceptor-yes"
+                    className="flex-[2] py-3 rounded-xl bg-lumina-accent text-black text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all"
+                  >
+                    Yes, I Got This!
+                  </button>
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`p-4 rounded-xl text-center ${correct ? 'bg-lumina-accent/10 border border-lumina-accent/30' : 'bg-red-500/10 border border-red-500/30'}`}
+                >
+                  <span className="text-lg font-bold">{correct ? '+50 XP Earned!' : 'Review this topic soon!'}</span>
+                </motion.div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+// ========================================
+// FEATURE 4: CLASS RAID WIDGET
+// ========================================
+const ClassRaidWidget = ({ user }: { user: UserProfile }) => {
+  const [raids] = useState([
+    { id: 'r1', name: 'Advanced Architecture', bossHp: 1000, currentDamage: 647, participants: 12, reward: 500 },
+    { id: 'r2', name: 'Quantum Algorithms', bossHp: 800, currentDamage: 234, participants: 8, reward: 400 },
+  ]);
+  const [activeRaid, setActiveRaid] = useState<string | null>(null);
+  const [attacking, setAttacking] = useState(false);
+  const [damageDealt, setDamageDealt] = useState(0);
+
+  const joinRaid = (raidId: string) => {
+    setActiveRaid(raidId);
+    setAttacking(true);
+    setDamageDealt(0);
+    
+    let dealt = 0;
+    const interval = setInterval(() => {
+      dealt += Math.floor(Math.random() * 15) + 5;
+      setDamageDealt(dealt);
+      if (dealt >= 50) {
+        clearInterval(interval);
+        setAttacking(false);
+      }
+    }, 300);
+  };
+
+  return (
+    <div className="card-lumina p-6 border-cyan-500/20">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+            <Sword size={18} className="text-cyan-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-lumina-text">Live Class Raids</h3>
+            <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">Cooperative study battles</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-[10px] text-cyan-400 font-bold uppercase tracking-widest">
+          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          Live
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {raids.map((raid) => {
+          const hpPercent = Math.max(0, ((raid.bossHp - raid.currentDamage - (activeRaid === raid.id ? damageDealt : 0)) / raid.bossHp) * 100);
+          const remainingHp = Math.max(0, raid.bossHp - raid.currentDamage - (activeRaid === raid.id ? damageDealt : 0));
+          
+          return (
+            <div key={raid.id} className="bg-white/[0.03] rounded-2xl p-4 border border-white/5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-xs font-bold text-lumina-text">{raid.name} Boss</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Users size={10} className="text-lumina-text/30" />
+                    <span className="text-[9px] text-lumina-text/30 uppercase tracking-widest">{raid.participants} raiders</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-bold font-mono text-red-400">{remainingHp.toFixed(0)}/{raid.bossHp} HP</div>
+                  <div className="text-[8px] text-lumina-accent uppercase tracking-widest">+{raid.reward} XP Reward</div>
+                </div>
+              </div>
+              
+              {/* Boss HP Bar */}
+              <div className="h-3 bg-white/5 rounded-full overflow-hidden mb-3 border border-white/5">
+                <motion.div
+                  animate={{ width: `${hpPercent}%` }}
+                  transition={{ duration: 0.5 }}
+                  className={`h-full rounded-full ${
+                    hpPercent > 50 ? 'bg-gradient-to-r from-red-500 to-red-400' :
+                    hpPercent > 25 ? 'bg-gradient-to-r from-orange-500 to-yellow-400' :
+                    'bg-gradient-to-r from-green-500 to-lumina-accent'
+                  }`}
+                />
+              </div>
+
+              {activeRaid === raid.id && attacking ? (
+                <div className="flex items-center justify-center gap-2 py-2">
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full" />
+                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Attacking... {damageDealt} DMG</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => joinRaid(raid.id)}
+                  data-testid={`join-raid-${raid.id}`}
+                  disabled={activeRaid === raid.id && !attacking && damageDealt > 0}
+                  className="w-full py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-bold text-cyan-400 uppercase tracking-widest hover:bg-cyan-500/20 transition-all disabled:opacity-40"
+                >
+                  {activeRaid === raid.id && damageDealt > 0 ? `Dealt ${damageDealt} DMG` : 'Join Raid'}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+
+
 export default function App() {
   const [view, setView] = useState<View>('auth');
   const [activeTopic, setActiveTopic] = useState<Topic | null>(null);
@@ -3358,14 +3956,46 @@ export default function App() {
     setConfirmModal({
       isOpen: true,
       title: 'Delete Directory',
-      message: 'Are you sure? This will permanently delete all neural chapters within this directory.',
+      message: 'Are you sure? This will permanently delete all neural chapters and uploaded files within this directory.',
       onConfirm: async () => {
         try {
-          // Delete all topics in this subject first to avoid foreign key constraints
+          // Get all topics in this subject to find their assets
+          const subjectTopics = subjects.find(s => s.id === id)?.topics || [];
+          
+          // For each topic, list and remove all files from storage
+          for (const topic of subjectTopics) {
+            try {
+              const dirPath = `${user!.uid}/assets/${topic.id}`;
+              const { data: fileList, error: listError } = await supabase.storage
+                .from('app-files')
+                .list(dirPath);
+              
+              if (listError) {
+                console.error(`[RLS/Storage] Error listing files in ${dirPath}:`, listError);
+                continue;
+              }
+              
+              if (fileList && fileList.length > 0) {
+                const filePaths = fileList.map(f => `${dirPath}/${f.name}`);
+                const { error: removeError } = await supabase.storage
+                  .from('app-files')
+                  .remove(filePaths);
+                
+                if (removeError) {
+                  console.error(`[RLS/Storage] Error removing files in ${dirPath}:`, removeError);
+                }
+              }
+            } catch (storageErr) {
+              console.error(`[RLS/Storage] Failed to clean storage for topic ${topic.id}:`, storageErr);
+            }
+          }
+          
+          // Delete all topics in this subject from DB
           await supabase.from('topics').delete().eq('subjectId', id);
+          // Delete the subject itself
           await supabase.from('subjects').delete().eq('id', id);
         } catch (error) {
-          console.error('Error deleting subject:', error);
+          console.error('[RLS/Storage] Error deleting subject directory:', error);
         }
       }
     });
@@ -3422,7 +4052,13 @@ export default function App() {
           )}
           {user && view === 'overview' && (
             <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <OverviewView onJumpBack={handleJumpToFocus} user={user} subjects={subjects} noteCount={noteCount} />
+              <OverviewView onJumpBack={handleJumpToFocus} user={user} subjects={subjects} noteCount={noteCount} onXpGain={(xp: number) => {
+                if (user) {
+                  const newXp = user.xp + xp;
+                  setUser({ ...user, xp: newXp, rank: getMemorEaseRank(newXp), level: Math.floor(newXp / 100) + 1 });
+                  supabase.from('users').update({ xp: newXp, rank: getMemorEaseRank(newXp), level: Math.floor(newXp / 100) + 1 }).eq('uid', user.uid);
+                }
+              }} />
             </motion.div>
           )}
           {user && view === 'focus' && (
