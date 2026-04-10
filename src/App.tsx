@@ -843,6 +843,80 @@ const getRankColor = (rank: string) => {
   return 'from-gray-500 to-gray-600';
 };
 
+// ========================================
+// ACTIVITY HEATMAP (LeetCode-style)
+// ========================================
+const ActivityHeatmap = () => {
+  const heatmapData = React.useMemo(() => {
+    const data: { date: string, value: number, month: string, week: number, day: number }[] = [];
+    const now = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (let i = 364; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const weekNum = Math.floor((364 - i) / 7);
+      const dayNum = d.getDay();
+      const isRecent = i < 120;
+      const val = isRecent ? Math.floor(Math.random() * 5) : (Math.random() > 0.7 ? Math.floor(Math.random() * 3) : 0);
+      data.push({ date: d.toISOString().split('T')[0], value: val, month: months[d.getMonth()], week: weekNum, day: dayNum });
+    }
+    return data;
+  }, []);
+
+  const activeDays = heatmapData.filter(d => d.value > 0).length;
+  const maxStreak = (() => {
+    let max = 0, cur = 0;
+    heatmapData.forEach(d => { if (d.value > 0) { cur++; max = Math.max(max, cur); } else cur = 0; });
+    return max;
+  })();
+
+  const monthLabels = (() => {
+    const labels: { month: string, week: number }[] = [];
+    let lastMonth = '';
+    heatmapData.forEach(d => { if (d.month !== lastMonth) { labels.push({ month: d.month, week: d.week }); lastMonth = d.month; } });
+    return labels;
+  })();
+
+  return (
+    <div className="card-lumina p-6" data-testid="activity-heatmap">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        <h3 className="text-sm font-bold text-lumina-text">{activeDays} sessions in the last year</h3>
+        <div className="flex items-center gap-6 text-[10px] font-bold text-lumina-text/40 uppercase tracking-widest">
+          <span>Active days: <span className="text-lumina-text">{activeDays}</span></span>
+          <span>Max streak: <span className="text-lumina-accent">{maxStreak}</span></span>
+        </div>
+      </div>
+      <div className="overflow-x-auto custom-scrollbar pb-2">
+        <div className="min-w-[700px]">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(53, 1fr)', gridTemplateRows: 'repeat(7, 1fr)', gap: '3px' }}>
+            {Array.from({ length: 53 * 7 }).map((_, idx) => {
+              const week = Math.floor(idx / 7);
+              const day = idx % 7;
+              const dp = heatmapData.find(d => d.week === week && d.day === day);
+              const val = dp?.value || 0;
+              return (
+                <div key={idx} className={`aspect-square rounded-[2px] ${val === 0 ? 'bg-white/[0.04]' : val === 1 ? 'bg-lumina-accent/20' : val === 2 ? 'bg-lumina-accent/40' : val === 3 ? 'bg-lumina-accent/70' : 'bg-lumina-accent'}`} style={{ minWidth: '10px', minHeight: '10px' }} />
+              );
+            })}
+          </div>
+          <div className="flex mt-2">
+            {monthLabels.map((m, i) => (
+              <span key={i} className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest" style={{ position: 'relative', left: `${(m.week / 53) * 100}%`, width: 0, whiteSpace: 'nowrap' }}>{m.month}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-end gap-2 mt-3">
+        <span className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">Less</span>
+        {[0.04, 0.2, 0.4, 0.7, 1].map((op, i) => (
+          <div key={i} className="w-[10px] h-[10px] rounded-[2px]" style={{ backgroundColor: i === 0 ? 'rgba(255,255,255,0.04)' : `rgba(212, 255, 0, ${op})` }} />
+        ))}
+        <span className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">More</span>
+      </div>
+    </div>
+  );
+};
+
 const OverviewView = ({ onJumpBack, user, subjects, noteCount, onXpGain }: { onJumpBack: (topic: Topic) => void, user: UserProfile, subjects: Subject[], noteCount: number, onXpGain: (xp: number) => void }) => {
   const allTopics = subjects.flatMap(s => s.topics);
   const currentTopic = allTopics.find(t => t.progress < 100) || allTopics[0] || {
@@ -1099,21 +1173,26 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount, onXpGain }: { onJ
           </div>
 
           {/* New Feature Widgets Row */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             {/* Triage Mode Button */}
-            <div className="md:col-span-4">
+            <div className="min-w-0">
               <TriageModeWidget subjects={subjects} user={user} onJumpToFocus={onJumpBack} />
             </div>
 
             {/* Distraction Interceptor */}
-            <div className="md:col-span-4">
+            <div className="min-w-0">
               <DistractionInterceptor topics={subjects.flatMap(s => s.topics)} user={user} onXpGain={onXpGain} />
             </div>
 
             {/* Class Raid Widget */}
-            <div className="md:col-span-4">
+            <div className="min-w-0">
               <ClassRaidWidget user={user} />
             </div>
+          </div>
+
+          {/* Activity Heatmap */}
+          <div className="mt-6">
+            <ActivityHeatmap />
           </div>
         </div>
       </div>
@@ -1146,6 +1225,43 @@ const FocusView = ({
   const [showSettings, setShowSettings] = useState(false);
   const [pomodoroCount, setPomodoroCount] = useState(0);
   const [sessionsBeforeLong, setSessionsBeforeLong] = useState(4);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const AMBIENCE_URLS: Record<string, string> = {
+    'Rain': 'https://cdn.pixabay.com/audio/2022/10/30/audio_a6a201c5ab.mp3',
+    'Lo-Fi': 'https://cdn.pixabay.com/audio/2024/11/05/audio_98bf0b00c7.mp3',
+    'Waves': 'https://cdn.pixabay.com/audio/2022/02/23/audio_ea70ad31a0.mp3',
+    'Forest': 'https://cdn.pixabay.com/audio/2022/08/31/audio_419263fc5b.mp3',
+    'Night': 'https://cdn.pixabay.com/audio/2024/09/26/audio_e2b1d20c1e.mp3',
+  };
+
+  useEffect(() => {
+    if (selectedMusic === 'None') {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      return;
+    }
+    
+    const url = AMBIENCE_URLS[selectedMusic];
+    if (!url) return;
+    
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    
+    const audio = new Audio(url);
+    audio.loop = true;
+    audio.volume = 0.4;
+    audio.play().catch(err => console.log('Audio autoplay blocked:', err));
+    audioRef.current = audio;
+    
+    return () => {
+      audio.pause();
+      audio.src = '';
+    };
+  }, [selectedMusic]);
 
   useEffect(() => {
     let timer: any;
@@ -2258,50 +2374,6 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
     }
   };
 
-  const heatmapData = (() => {
-    const data: { date: string, value: number, month: string, week: number, day: number }[] = [];
-    const now = new Date();
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    for (let i = 364; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const weekNum = Math.floor((364 - i) / 7);
-      const dayNum = d.getDay();
-      const isRecent = i < 120;
-      const val = isRecent ? Math.floor(Math.random() * 5) : (Math.random() > 0.7 ? Math.floor(Math.random() * 3) : 0);
-      data.push({
-        date: d.toISOString().split('T')[0],
-        value: val,
-        month: months[d.getMonth()],
-        week: weekNum,
-        day: dayNum
-      });
-    }
-    return data;
-  })();
-
-  const activeDays = heatmapData.filter(d => d.value > 0).length;
-  const maxStreak = (() => {
-    let max = 0, cur = 0;
-    heatmapData.forEach(d => {
-      if (d.value > 0) { cur++; max = Math.max(max, cur); }
-      else cur = 0;
-    });
-    return max;
-  })();
-
-  const monthLabels = (() => {
-    const labels: { month: string, week: number }[] = [];
-    let lastMonth = '';
-    heatmapData.forEach(d => {
-      if (d.month !== lastMonth) {
-        labels.push({ month: d.month, week: d.week });
-        lastMonth = d.month;
-      }
-    });
-    return labels;
-  })();
-
   return (
     <div className="pt-32 px-6 pb-20 min-h-screen relative font-sans">
       <div className="max-w-7xl mx-auto relative z-10">
@@ -2423,61 +2495,25 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
             </div>
 
             <div className="card-lumina p-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-sm font-bold text-lumina-text">
-                    {heatmapData.filter(d => d.value > 0).length} sessions in the last year
-                  </h3>
-                </div>
-                <div className="flex items-center gap-6 text-[10px] font-bold text-lumina-text/40 uppercase tracking-widest">
-                  <span>Active days: <span className="text-lumina-text">{activeDays}</span></span>
-                  <span>Max streak: <span className="text-lumina-accent">{maxStreak}</span></span>
-                </div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-sm font-bold text-lumina-text">Study Summary</h3>
+                <TrendingUp size={16} className="text-lumina-accent" />
               </div>
-              
-              <div className="overflow-x-auto custom-scrollbar pb-2">
-                <div className="min-w-[700px]">
-                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(53, 1fr)`, gridTemplateRows: 'repeat(7, 1fr)', gap: '3px' }}>
-                    {Array.from({ length: 53 * 7 }).map((_, idx) => {
-                      const week = Math.floor(idx / 7);
-                      const day = idx % 7;
-                      const dataPoint = heatmapData.find(d => d.week === week && d.day === day);
-                      const val = dataPoint?.value || 0;
-                      return (
-                        <div 
-                          key={idx}
-                          className={`aspect-square rounded-[2px] transition-colors ${
-                            val === 0 ? 'bg-white/[0.04]' :
-                            val === 1 ? 'bg-lumina-accent/20' :
-                            val === 2 ? 'bg-lumina-accent/40' :
-                            val === 3 ? 'bg-lumina-accent/70' : 'bg-lumina-accent'
-                          }`}
-                          style={{ minWidth: '10px', minHeight: '10px' }}
-                        />
-                      );
-                    })}
-                  </div>
-                  <div className="flex mt-2" style={{ paddingLeft: '0' }}>
-                    {monthLabels.map((m, i) => (
-                      <span 
-                        key={i} 
-                        className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest"
-                        style={{ position: 'relative', left: `${(m.week / 53) * 100}%`, width: 0, whiteSpace: 'nowrap' }}
-                      >
-                        {m.month}
-                      </span>
-                    ))}
-                  </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white/5 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-display font-bold text-lumina-accent">{subjects.length}</div>
+                  <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest mt-1">Subjects</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-display font-bold text-lumina-text">{subjects.flatMap(s => s.topics).length}</div>
+                  <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest mt-1">Topics</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-display font-bold text-lumina-accent">{Math.round(subjects.flatMap(s => s.topics).reduce((a, t) => a + t.progress, 0) / Math.max(subjects.flatMap(s => s.topics).length, 1))}%</div>
+                  <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest mt-1">Avg Mastery</div>
                 </div>
               </div>
-              
-              <div className="flex items-center justify-end gap-2 mt-3">
-                <span className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">Less</span>
-                {[0.04, 0.2, 0.4, 0.7, 1].map((op, i) => (
-                  <div key={i} className="w-[10px] h-[10px] rounded-[2px]" style={{ backgroundColor: i === 0 ? 'rgba(255,255,255,0.04)' : `rgba(212, 255, 0, ${op})` }} />
-                ))}
-                <span className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">More</span>
-              </div>
+              <p className="text-[10px] text-lumina-text/20 uppercase tracking-widest mt-4 text-center">Activity heatmap available in Metrics tab</p>
             </div>
           </div>
 
@@ -3123,17 +3159,17 @@ const TriageModeWidget = ({ subjects, user, onJumpToFocus }: { subjects: Subject
       <button
         onClick={toggleTriage}
         data-testid="triage-mode-btn"
-        className="w-full card-lumina p-5 border-red-500/30 hover:border-red-500/60 transition-all group cursor-pointer flex items-center gap-4"
+        className="w-full card-lumina p-5 border-red-500/30 hover:border-red-500/60 transition-all group cursor-pointer flex items-center gap-3 h-full"
       >
-        <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-          <Siren size={22} className="text-red-400" />
+        <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+          <Siren size={18} className="text-red-400" />
         </div>
-        <div className="flex-1 text-left">
-          <div className="text-sm font-bold text-red-400 uppercase tracking-tight">Triage Mode</div>
-          <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest">{fadingTopics.length} fading topics</div>
+        <div className="flex-1 text-left min-w-0">
+          <div className="text-xs font-bold text-red-400 truncate">Triage Mode</div>
+          <div className="text-[10px] text-lumina-text/30 truncate">{fadingTopics.length} fading topics</div>
         </div>
-        <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
-          <span className="text-xs font-bold text-red-400">{fadingTopics.length}</span>
+        <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
+          <span className="text-[10px] font-bold text-red-400">{fadingTopics.length}</span>
         </div>
       </button>
     );
@@ -3436,6 +3472,21 @@ const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], u
   const [answered, setAnswered] = useState(false);
   const [correct, setCorrect] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  const [quizQuestion, setQuizQuestion] = useState('');
+
+  const generateQuiz = (topic: Topic) => {
+    const questions = [
+      `What are the key principles of ${topic.name}?`,
+      `Can you explain the main concept behind ${topic.name}?`,
+      `What is the most important formula/rule in ${topic.name}?`,
+      `Name 3 sub-topics within ${topic.name}.`,
+      `How does ${topic.name} relate to real-world applications?`,
+      `What was the last thing you learned about ${topic.name}?`,
+      `What's the foundational theory of ${topic.name}?`,
+      `Describe the relationship between concepts in ${topic.name}.`,
+    ];
+    return questions[Math.floor(Math.random() * questions.length)];
+  };
 
   useEffect(() => {
     if (!isActive) return;
@@ -3447,6 +3498,7 @@ const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], u
         if (fadingTopics.length > 0) {
           const randomTopic = fadingTopics[Math.floor(Math.random() * fadingTopics.length)];
           setCurrentTopic(randomTopic);
+          setQuizQuestion(generateQuiz(randomTopic));
           setShowModal(true);
           setAnswered(false);
           setCorrect(false);
@@ -3472,20 +3524,20 @@ const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], u
 
   return (
     <>
-      <div className="card-lumina p-5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-lumina-accent/10 border border-lumina-accent/20' : 'bg-white/5 border border-white/10'}`}>
+      <div className="card-lumina p-5 flex items-center justify-between gap-3 h-full">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isActive ? 'bg-lumina-accent/10 border border-lumina-accent/20' : 'bg-white/5 border border-white/10'}`}>
             <Crosshair size={18} className={isActive ? 'text-lumina-accent' : 'text-lumina-text/30'} />
           </div>
-          <div>
-            <div className="text-xs font-bold text-lumina-text">Distraction Interceptor</div>
-            <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest">{isActive ? 'Armed - +50 XP per catch' : 'Inactive'}</div>
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-lumina-text truncate">Interceptor</div>
+            <div className="text-[10px] text-lumina-text/30 truncate">{isActive ? 'Armed +50 XP' : 'Inactive'}</div>
           </div>
         </div>
         <button
           onClick={() => setIsActive(!isActive)}
           data-testid="interceptor-toggle"
-          className={`w-12 h-6 rounded-full relative transition-all ${isActive ? 'bg-lumina-accent' : 'bg-white/10'}`}
+          className={`w-12 h-6 rounded-full relative transition-all shrink-0 ${isActive ? 'bg-lumina-accent' : 'bg-white/10'}`}
         >
           <motion.div
             animate={{ x: isActive ? 26 : 2 }}
@@ -3517,12 +3569,18 @@ const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], u
                 <span className="text-[10px] font-bold text-lumina-accent uppercase tracking-[0.3em]">Distraction Intercepted</span>
               </div>
 
-              <h3 className="text-2xl font-display font-bold text-lumina-text mb-2">{currentTopic.name}</h3>
-              <p className="text-sm text-lumina-text/40 mb-6 leading-relaxed">{currentTopic.description}</p>
+              <h3 className="text-xl font-display font-bold text-lumina-text mb-2">{currentTopic.name}</h3>
 
               <div className="bg-white/5 rounded-2xl p-4 mb-6">
-                <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest mb-2">Quick Check</div>
-                <p className="text-sm text-lumina-text/60">Can you recall the key concepts from <strong className="text-lumina-accent">{currentTopic.name}</strong>?</p>
+                <div className="text-[10px] text-lumina-accent uppercase tracking-widest mb-2 font-bold">Quick Recall</div>
+                <p className="text-sm text-lumina-text/70 leading-relaxed">{quizQuestion}</p>
+              </div>
+
+              <div className="flex items-center gap-2 mb-6">
+                <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full bg-lumina-accent/50 rounded-full" style={{ width: `${currentTopic.progress}%` }} />
+                </div>
+                <span className="text-[10px] text-lumina-text/30 font-bold">{currentTopic.progress}% mastery</span>
               </div>
 
               {!answered ? (
@@ -3532,23 +3590,23 @@ const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], u
                     data-testid="interceptor-no"
                     className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text/40 uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
                   >
-                    Not Really
+                    Can't Recall
                   </button>
                   <button
                     onClick={() => handleAnswer(true)}
                     data-testid="interceptor-yes"
                     className="flex-[2] py-3 rounded-xl bg-lumina-accent text-black text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all"
                   >
-                    Yes, I Got This!
+                    I Got This! +50 XP
                   </button>
                 </div>
               ) : (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className={`p-4 rounded-xl text-center ${correct ? 'bg-lumina-accent/10 border border-lumina-accent/30' : 'bg-red-500/10 border border-red-500/30'}`}
+                  className={`p-4 rounded-xl text-center ${correct ? 'bg-lumina-accent/10 border border-lumina-accent/30' : 'bg-orange-500/10 border border-orange-500/30'}`}
                 >
-                  <span className="text-lg font-bold">{correct ? '+50 XP Earned!' : 'Review this topic soon!'}</span>
+                  <span className="text-lg font-bold">{correct ? '+50 XP Earned!' : 'Time to review this!'}</span>
                 </motion.div>
               )}
             </motion.div>
@@ -3563,15 +3621,43 @@ const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], u
 // FEATURE 4: CLASS RAID WIDGET
 // ========================================
 const ClassRaidWidget = ({ user }: { user: UserProfile }) => {
-  const [raids] = useState([
+  const [raids, setRaids] = useState([
     { id: 'r1', name: 'Advanced Architecture', bossHp: 1000, currentDamage: 647, participants: 12, reward: 500 },
     { id: 'r2', name: 'Quantum Algorithms', bossHp: 800, currentDamage: 234, participants: 8, reward: 400 },
   ]);
   const [activeRaid, setActiveRaid] = useState<string | null>(null);
   const [attacking, setAttacking] = useState(false);
   const [damageDealt, setDamageDealt] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
-  const joinRaid = (raidId: string) => {
+  // Try to fetch from Supabase class_raids table
+  useEffect(() => {
+    const fetchRaids = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('class_raids')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(3);
+        if (data && data.length > 0 && !error) {
+          setRaids(data.map((r: any) => ({
+            id: r.id,
+            name: r.name || r.boss_name || 'Unknown Raid',
+            bossHp: r.boss_hp || r.bossHp || 1000,
+            currentDamage: r.current_damage || r.currentDamage || 0,
+            participants: r.participants || 0,
+            reward: r.reward || 500,
+          })));
+        }
+      } catch (err) {
+        // Table might not exist yet, use mock data
+        console.log('class_raids table not found, using mock data');
+      }
+    };
+    fetchRaids();
+  }, []);
+
+  const joinRaid = async (raidId: string) => {
     setActiveRaid(raidId);
     setAttacking(true);
     setDamageDealt(0);
@@ -3583,81 +3669,91 @@ const ClassRaidWidget = ({ user }: { user: UserProfile }) => {
       if (dealt >= 50) {
         clearInterval(interval);
         setAttacking(false);
+        // Try to update in Supabase
+        supabase
+          .from('class_raids')
+          .update({ current_damage: raids.find(r => r.id === raidId)!.currentDamage + dealt })
+          .eq('id', raidId)
+          .then(() => {})
+          .catch(() => {});
       }
     }, 300);
   };
 
+  const topRaid = raids[0];
+  const hpPercent = topRaid ? Math.max(0, ((topRaid.bossHp - topRaid.currentDamage - (activeRaid === topRaid.id ? damageDealt : 0)) / topRaid.bossHp) * 100) : 0;
+  const remainingHp = topRaid ? Math.max(0, topRaid.bossHp - topRaid.currentDamage - (activeRaid === topRaid.id ? damageDealt : 0)) : 0;
+
   return (
-    <div className="card-lumina p-6 border-cyan-500/20">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+    <div className="card-lumina p-5 border-cyan-500/20 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
             <Sword size={18} className="text-cyan-400" />
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-lumina-text">Live Class Raids</h3>
-            <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">Cooperative study battles</p>
+          <div className="min-w-0">
+            <h3 className="text-xs font-bold text-lumina-text truncate">Class Raids</h3>
+            <p className="text-[10px] text-lumina-text/30 truncate">Cooperative battles</p>
           </div>
         </div>
-        <div className="flex items-center gap-1 text-[10px] text-cyan-400 font-bold uppercase tracking-widest">
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+        <div className="flex items-center gap-1 text-[9px] text-cyan-400 font-bold shrink-0">
+          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
           Live
         </div>
       </div>
 
-      <div className="space-y-4">
-        {raids.map((raid) => {
-          const hpPercent = Math.max(0, ((raid.bossHp - raid.currentDamage - (activeRaid === raid.id ? damageDealt : 0)) / raid.bossHp) * 100);
-          const remainingHp = Math.max(0, raid.bossHp - raid.currentDamage - (activeRaid === raid.id ? damageDealt : 0));
-          
-          return (
-            <div key={raid.id} className="bg-white/[0.03] rounded-2xl p-4 border border-white/5">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <div className="text-xs font-bold text-lumina-text">{raid.name} Boss</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Users size={10} className="text-lumina-text/30" />
-                    <span className="text-[9px] text-lumina-text/30 uppercase tracking-widest">{raid.participants} raiders</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-bold font-mono text-red-400">{remainingHp.toFixed(0)}/{raid.bossHp} HP</div>
-                  <div className="text-[8px] text-lumina-accent uppercase tracking-widest">+{raid.reward} XP Reward</div>
-                </div>
-              </div>
-              
-              {/* Boss HP Bar */}
-              <div className="h-3 bg-white/5 rounded-full overflow-hidden mb-3 border border-white/5">
-                <motion.div
-                  animate={{ width: `${hpPercent}%` }}
-                  transition={{ duration: 0.5 }}
-                  className={`h-full rounded-full ${
-                    hpPercent > 50 ? 'bg-gradient-to-r from-red-500 to-red-400' :
-                    hpPercent > 25 ? 'bg-gradient-to-r from-orange-500 to-yellow-400' :
-                    'bg-gradient-to-r from-green-500 to-lumina-accent'
-                  }`}
-                />
-              </div>
-
-              {activeRaid === raid.id && attacking ? (
-                <div className="flex items-center justify-center gap-2 py-2">
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full" />
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Attacking... {damageDealt} DMG</span>
-                </div>
-              ) : (
-                <button
-                  onClick={() => joinRaid(raid.id)}
-                  data-testid={`join-raid-${raid.id}`}
-                  disabled={activeRaid === raid.id && !attacking && damageDealt > 0}
-                  className="w-full py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-bold text-cyan-400 uppercase tracking-widest hover:bg-cyan-500/20 transition-all disabled:opacity-40"
-                >
-                  {activeRaid === raid.id && damageDealt > 0 ? `Dealt ${damageDealt} DMG` : 'Join Raid'}
-                </button>
-              )}
+      {/* Top raid - always visible */}
+      {topRaid && (
+        <div className="bg-white/[0.03] rounded-xl p-3 border border-white/5 flex-1">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold text-lumina-text truncate">{topRaid.name}</span>
+            <span className="text-[9px] font-mono font-bold text-red-400 shrink-0">{remainingHp.toFixed(0)}/{topRaid.bossHp}</span>
+          </div>
+          <div className="h-2 bg-white/5 rounded-full overflow-hidden mb-2">
+            <motion.div animate={{ width: `${hpPercent}%` }} transition={{ duration: 0.5 }} className={`h-full rounded-full ${hpPercent > 50 ? 'bg-red-500' : hpPercent > 25 ? 'bg-orange-500' : 'bg-green-500'}`} />
+          </div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[8px] text-lumina-text/30 flex items-center gap-1"><Users size={9} />{topRaid.participants} raiders</span>
+            <span className="text-[8px] text-lumina-accent font-bold">+{topRaid.reward} XP</span>
+          </div>
+          {activeRaid === topRaid.id && attacking ? (
+            <div className="flex items-center justify-center gap-2 py-1.5">
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-3 h-3 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full" />
+              <span className="text-[9px] font-bold text-cyan-400">{damageDealt} DMG</span>
             </div>
+          ) : (
+            <button onClick={() => joinRaid(topRaid.id)} data-testid={`join-raid-${topRaid.id}`} disabled={activeRaid === topRaid.id && !attacking && damageDealt > 0} className="w-full py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-bold text-cyan-400 uppercase tracking-widest hover:bg-cyan-500/20 transition-all disabled:opacity-40">
+              {activeRaid === topRaid.id && damageDealt > 0 ? `${damageDealt} DMG Dealt` : 'Join Raid'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {raids.length > 1 && (
+        <button onClick={() => setExpanded(!expanded)} className="mt-2 text-[9px] font-bold text-lumina-text/30 hover:text-lumina-text/50 uppercase tracking-widest transition-colors text-center">
+          {expanded ? 'Show Less' : `+${raids.length - 1} More Raids`}
+        </button>
+      )}
+
+      <AnimatePresence>
+        {expanded && raids.slice(1).map((raid) => {
+          const rHp = Math.max(0, ((raid.bossHp - raid.currentDamage) / raid.bossHp) * 100);
+          return (
+            <motion.div key={raid.id} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-white/[0.03] rounded-xl p-3 border border-white/5 mt-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold text-lumina-text truncate">{raid.name}</span>
+                <span className="text-[9px] font-mono text-red-400 shrink-0">{Math.max(0, raid.bossHp - raid.currentDamage)}/{raid.bossHp}</span>
+              </div>
+              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden mb-2">
+                <div className={`h-full rounded-full ${rHp > 50 ? 'bg-red-500' : 'bg-orange-500'}`} style={{ width: `${rHp}%` }} />
+              </div>
+              <button onClick={() => joinRaid(raid.id)} data-testid={`join-raid-${raid.id}`} className="w-full py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-bold text-cyan-400 uppercase tracking-widest hover:bg-cyan-500/20 transition-all">
+                Join Raid
+              </button>
+            </motion.div>
           );
         })}
-      </div>
+      </AnimatePresence>
     </div>
   );
 };
