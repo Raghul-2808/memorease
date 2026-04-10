@@ -1706,6 +1706,7 @@ const VaultView = ({
   const [activeSubjectId, setActiveSubjectId] = useState<string | null>(subjects[0]?.id || null);
   const [newTopicName, setNewTopicName] = useState('');
   const [previewTopic, setPreviewTopic] = useState<Topic | null>(null);
+  const [repairTopic, setRepairTopic] = useState<Topic | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -1982,15 +1983,34 @@ const VaultView = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {activeSubject.topics.map((topic) => (
+                  {activeSubject.topics.map((topic) => {
+                    const isFading = topic.progress < 50 || topic.masteryLevel < 2;
+                    return (
                     <motion.div
                       key={topic.id}
                       layoutId={topic.id}
-                      onClick={() => setPreviewTopic(topic)}
-                      className="card-lumina p-6 group cursor-pointer hover:border-lumina-accent/30 transition-all"
+                      onClick={() => isFading ? setRepairTopic(topic) : setPreviewTopic(topic)}
+                      data-testid={`topic-card-${topic.id}`}
+                      className={`card-lumina p-6 group cursor-pointer transition-all relative overflow-hidden ${
+                        isFading 
+                          ? 'border-red-500/40 hover:border-red-500/60 animate-[glitch_3s_infinite]' 
+                          : 'hover:border-lumina-accent/30'
+                      }`}
                     >
+                      {isFading && (
+                        <>
+                          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48bGluZSB4MT0iMCIgeTE9IjQwIiB4Mj0iMjAwIiB5Mj0iNjAiIHN0cm9rZT0icmdiYSgyMzksMjksMjksMC4wOCkiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSI1MCIgeTE9IjAiIHgyPSIxNTAiIHkyPSIyMDAiIHN0cm9rZT0icmdiYSgyMzksMjksMjksMC4wNikiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSIxMjAiIHkxPSIxMCIgeDI9IjgwIiB5Mj0iMTkwIiBzdHJva2U9InJnYmEoMjM5LDI5LDI5LDAuMDYpIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4=')] opacity-50 pointer-events-none" />
+                          <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-red-500/20 border border-red-500/30">
+                            <span className="text-[8px] font-bold text-red-400 uppercase tracking-widest">Fading</span>
+                          </div>
+                        </>
+                      )}
                       <div className="flex items-start justify-between mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lumina-text/40 group-hover:text-lumina-accent transition-colors">
+                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
+                          isFading 
+                            ? 'bg-red-500/10 border-red-500/20 text-red-400' 
+                            : 'bg-white/5 border-white/10 text-lumina-text/40 group-hover:text-lumina-accent'
+                        }`}>
                           <BookOpen size={20} />
                         </div>
                         <div className="flex items-center gap-3">
@@ -1998,7 +2018,7 @@ const VaultView = ({
                             {[...Array(5)].map((_, i) => (
                               <div 
                                 key={i} 
-                                className={`w-1 h-3 rounded-full ${i < topic.masteryLevel ? 'bg-lumina-accent' : 'bg-white/10'}`} 
+                                className={`w-1 h-3 rounded-full ${i < topic.masteryLevel ? (isFading ? 'bg-red-400' : 'bg-lumina-accent') : 'bg-white/10'}`} 
                               />
                             ))}
                           </div>
@@ -2010,7 +2030,7 @@ const VaultView = ({
                           </button>
                         </div>
                       </div>
-                      <h3 className="text-lg font-bold text-lumina-text mb-2 group-hover:text-lumina-accent transition-colors">{topic.name}</h3>
+                      <h3 className={`text-lg font-bold mb-2 transition-colors ${isFading ? 'text-red-400' : 'text-lumina-text group-hover:text-lumina-accent'}`}>{topic.name}</h3>
                       <p className="text-xs text-lumina-text/40 line-clamp-2 mb-6 leading-relaxed">
                         {topic.description}
                       </p>
@@ -2018,17 +2038,21 @@ const VaultView = ({
                         <div className="flex items-center gap-4">
                           <div className="flex flex-col">
                             <span className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Progress</span>
-                            <span className="text-[10px] font-bold text-lumina-text">{topic.progress}%</span>
+                            <span className={`text-[10px] font-bold ${isFading ? 'text-red-400' : 'text-lumina-text'}`}>{topic.progress}%</span>
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Next Review</span>
                             <span className="text-[10px] font-bold text-lumina-accent">{topic.nextReview}</span>
                           </div>
                         </div>
-                        <ArrowRight size={16} className="text-lumina-text/20 group-hover:translate-x-1 group-hover:text-lumina-accent transition-all" />
+                        {isFading 
+                          ? <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest">Repair</span>
+                          : <ArrowRight size={16} className="text-lumina-text/20 group-hover:translate-x-1 group-hover:text-lumina-accent transition-all" />
+                        }
                       </div>
                     </motion.div>
-                  ))}
+                    );
+                  })}
 
                   {activeSubject.topics.length === 0 && (
                     <div className="col-span-2 py-20 flex flex-col items-center justify-center text-center">
@@ -2266,6 +2290,17 @@ const VaultView = ({
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Repair Memory Modal */}
+      <AnimatePresence>
+        {repairTopic && (
+          <RepairMemoryModal 
+            topic={repairTopic} 
+            onClose={() => setRepairTopic(null)}
+            onRepaired={() => setRepairTopic(null)}
+          />
         )}
       </AnimatePresence>
     </div>
@@ -3498,10 +3533,12 @@ const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], u
     if (isCorrect) {
       onXpGain(50);
     }
-    setTimeout(() => {
-      setShowModal(false);
-      setCurrentTopic(null);
-    }, 2000);
+  };
+
+  const dismissModal = () => {
+    setShowModal(false);
+    setCurrentTopic(null);
+    setAnswered(false);
   };
 
   return (
@@ -3586,9 +3623,18 @@ const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], u
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className={`p-4 rounded-xl text-center ${correct ? 'bg-lumina-accent/10 border border-lumina-accent/30' : 'bg-orange-500/10 border border-orange-500/30'}`}
+                  className="space-y-4"
                 >
-                  <span className="text-lg font-bold">{correct ? '+50 XP Earned!' : 'Time to review this!'}</span>
+                  <div className={`p-4 rounded-xl text-center ${correct ? 'bg-lumina-accent/10 border border-lumina-accent/30' : 'bg-orange-500/10 border border-orange-500/30'}`}>
+                    <span className="text-lg font-bold">{correct ? '+50 XP Earned!' : 'Time to review this!'}</span>
+                  </div>
+                  <button
+                    onClick={dismissModal}
+                    data-testid="interceptor-ok"
+                    className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text uppercase tracking-widest hover:bg-white/10 transition-all"
+                  >
+                    OK
+                  </button>
                 </motion.div>
               )}
             </motion.div>
@@ -3744,6 +3790,211 @@ const ClassRaidWidget = ({ user }: { user: UserProfile }) => {
 
 
 // ========================================
+// REPAIR MEMORY MODAL (3-Question Flashcard)
+// ========================================
+const RepairMemoryModal = ({ topic, onClose, onRepaired }: { topic: Topic, onClose: () => void, onRepaired: () => void }) => {
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<boolean[]>([]);
+  const [showResult, setShowResult] = useState(false);
+
+  const questions = [
+    { q: `What is the core concept of "${topic.name}"?`, hint: 'Think about the fundamental idea' },
+    { q: `Name one real-world application of ${topic.name}.`, hint: 'How is this used in practice?' },
+    { q: `What connects ${topic.name} to other topics you\'ve studied?`, hint: 'Find the relationships' },
+  ];
+
+  const handleAnswer = (correct: boolean) => {
+    const newAnswers = [...answers, correct];
+    setAnswers(newAnswers);
+    if (step < 2) {
+      setStep(step + 1);
+    } else {
+      setShowResult(true);
+      if (newAnswers.filter(a => a).length >= 2) {
+        setTimeout(() => onRepaired(), 2000);
+      }
+    }
+  };
+
+  const correctCount = answers.filter(a => a).length;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        className="max-w-lg w-full card-lumina p-8 relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5">
+          <motion.div 
+            animate={{ width: `${((step + (showResult ? 1 : 0)) / 3) * 100}%` }}
+            className="h-full bg-gradient-to-r from-red-500 via-orange-500 to-lumina-accent rounded-full"
+          />
+        </div>
+
+        <div className="flex items-center gap-3 mb-8 mt-2">
+          <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <HeartPulse size={18} className="text-red-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-display font-bold text-lumina-text">Repair Memory</h2>
+            <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">{topic.name} - Quick Recovery</p>
+          </div>
+          <button onClick={onClose} className="ml-auto w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-lumina-text/40 hover:text-lumina-text">
+            <X size={16} />
+          </button>
+        </div>
+
+        {!showResult ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                {[0, 1, 2].map(i => (
+                  <div key={i} className={`flex-1 h-1.5 rounded-full transition-all ${
+                    i < step ? (answers[i] ? 'bg-lumina-accent' : 'bg-red-500') :
+                    i === step ? 'bg-white/20' : 'bg-white/5'
+                  }`} />
+                ))}
+              </div>
+
+              <div className="text-[10px] text-lumina-text/30 font-bold uppercase tracking-widest mb-3">Question {step + 1} of 3</div>
+              <h3 className="text-xl font-bold text-lumina-text mb-3 leading-relaxed">{questions[step].q}</h3>
+              <p className="text-xs text-lumina-text/20 italic mb-8">{questions[step].hint}</p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleAnswer(false)}
+                  data-testid="repair-wrong"
+                  className="flex-1 py-4 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text/40 uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500/30 transition-all"
+                >
+                  Can't Recall
+                </button>
+                <button
+                  onClick={() => handleAnswer(true)}
+                  data-testid="repair-correct"
+                  className="flex-[2] py-4 rounded-xl bg-lumina-accent text-black text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all"
+                >
+                  I Remember!
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
+            <div className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center ${
+              correctCount >= 2 ? 'bg-lumina-accent/10' : 'bg-red-500/10'
+            }`}>
+              {correctCount >= 2 
+                ? <CheckCheck size={40} className="text-lumina-accent" />
+                : <AlertTriangle size={40} className="text-red-400" />
+              }
+            </div>
+            <h3 className="text-2xl font-display font-bold text-lumina-text mb-2">
+              {correctCount >= 2 ? 'Memory Repaired!' : 'Needs More Work'}
+            </h3>
+            <p className="text-xs text-lumina-text/40 mb-2">
+              {correctCount}/3 correct - {correctCount >= 2 ? 'Node restored to healthy state' : 'Try a full focus session to rebuild'}
+            </p>
+            {correctCount >= 2 && <p className="text-sm font-bold text-lumina-accent">+25 XP Repair Bonus</p>}
+            <button onClick={onClose} className="mt-6 px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text uppercase tracking-widest hover:bg-white/10 transition-all">
+              Close
+            </button>
+          </motion.div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ========================================
+// STREAK STORE WIDGET
+// ========================================
+const StreakStoreWidget = ({ user, onXpSpend }: { user: UserProfile, onXpSpend: (xp: number) => void }) => {
+  const [streakFreezes, setStreakFreezes] = useState(0);
+  const [purchasing, setPurchasing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const purchaseFreeze = () => {
+    if (user.xp < 500) return;
+    setPurchasing(true);
+    setTimeout(() => {
+      onXpSpend(500);
+      setStreakFreezes(prev => prev + 1);
+      setPurchasing(false);
+      setShowConfirm(false);
+    }, 800);
+  };
+
+  return (
+    <div className="card-lumina p-6 border-orange-500/20" data-testid="streak-store-widget">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+          <Flame size={18} className="text-orange-400" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-lumina-text">Streak Store</h3>
+          <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">Protect your progress</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="text-3xl">🔥</div>
+          <div>
+            <div className="text-2xl font-display font-bold text-orange-400">{user.streak}</div>
+            <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest">Day Streak</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {Array.from({ length: Math.min(streakFreezes, 5) }).map((_, i) => (
+            <div key={i} className="text-lg" title="Streak Freeze">🧊</div>
+          ))}
+          {streakFreezes > 5 && <span className="text-[10px] text-cyan-400 font-bold">+{streakFreezes - 5}</span>}
+        </div>
+      </div>
+
+      {!showConfirm ? (
+        <button
+          onClick={() => setShowConfirm(true)}
+          data-testid="buy-streak-freeze"
+          disabled={user.xp < 500}
+          className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:text-cyan-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+        >
+          <span className="text-lg">🧊</span>
+          Buy Streak Freeze
+          <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-400 text-[9px]">500 XP</span>
+        </button>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+          <p className="text-[10px] text-lumina-text/40 text-center mb-2">Spend 500 XP for a Streak Freeze?</p>
+          <div className="flex gap-2">
+            <button onClick={() => setShowConfirm(false)} className="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-lumina-text/40 uppercase tracking-widest">Cancel</button>
+            <button
+              onClick={purchaseFreeze}
+              disabled={purchasing}
+              data-testid="confirm-buy-freeze"
+              className="flex-[2] py-2.5 rounded-xl bg-cyan-500/20 border border-cyan-500/30 text-[10px] font-bold text-cyan-400 uppercase tracking-widest disabled:opacity-50"
+            >
+              {purchasing ? 'Purchasing...' : 'Confirm Purchase'}
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+// ========================================
 // BATTLE HUB VIEW (Arena Tab)
 // ========================================
 const BattleHubView = ({ user, subjects, onJumpToFocus, onXpGain }: { 
@@ -3822,10 +4073,13 @@ const BattleHubView = ({ user, subjects, onJumpToFocus, onXpGain }: {
             </div>
           </div>
 
-          {/* Right Column - Raids + Heatmap */}
+          {/* Right Column - Streak Store + Heatmap */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Class Raids - Expanded */}
-            <ClassRaidWidget user={user} />
+            {/* Streak Store */}
+            <StreakStoreWidget 
+              user={user} 
+              onXpSpend={(xp) => onXpGain(-xp)} 
+            />
 
             {/* Activity Heatmap */}
             <ActivityHeatmap />
