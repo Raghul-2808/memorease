@@ -42,7 +42,28 @@ import {
   ArrowRight,
   AlertTriangle,
   Type,
-  Download
+  Download,
+  Eye,
+  EyeOff,
+  Settings,
+  Sliders,
+  Crown,
+  Shield,
+  Swords,
+  Gem,
+  Sparkles,
+  Trophy,
+  Medal,
+  Heart,
+  Coffee,
+  Moon,
+  Sun,
+  CloudRain,
+  Music,
+  Headphones,
+  Gift,
+  PartyPopper,
+  TimerReset
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -301,6 +322,7 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -429,16 +451,11 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
             <button 
               onClick={() => setMode('signup')}
+              data-testid="get-started-btn"
               className="btn-primary px-10 py-4 text-base"
             >
               Get Started Free
               <ChevronRight size={20} />
-            </button>
-            <button 
-              onClick={() => setMode('login')}
-              className="btn-secondary px-10 py-4 text-base"
-            >
-              View Demo
             </button>
           </div>
 
@@ -449,7 +466,7 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
               { title: 'Deep Focus Mode', desc: 'Eliminate distractions with our proprietary hardcore focus protocols.', icon: <Timer className="text-lumina-accent" />, col: 'md:col-span-1' },
               { title: 'Neural Mapping', desc: 'Visualize connections between concepts with interactive knowledge graphs.', icon: <Brain className="text-lumina-accent" />, col: 'md:col-span-1' },
               { title: 'Secure Vault', desc: 'Your intellectual assets are encrypted and stored in a high-performance database.', icon: <Database className="text-lumina-accent" />, col: 'md:col-span-2' },
-              { title: 'Global Rankings', desc: 'Compete with scholars worldwide and climb the neural leaderboard.', icon: <Award className="text-lumina-accent" />, col: 'md:col-span-1' }
+              { title: 'Smart Progress', desc: 'Track your mastery journey with intelligent analytics and insights.', icon: <TrendingUp className="text-lumina-accent" />, col: 'md:col-span-1' }
             ].map((f, i) => (
               <motion.div 
                 key={i} 
@@ -595,14 +612,25 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-lumina-text/40 ml-1">Password</label>
-                      <input 
-                        type="password" 
-                        placeholder="••••••••" 
-                        className="input-lumina" 
-                        required 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
+                      <div className="relative">
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          className="input-lumina pr-12" 
+                          required 
+                          data-testid="login-password-input"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <button 
+                          type="button"
+                          data-testid="login-toggle-password"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-lumina-text/30 hover:text-lumina-accent transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
                     <div className="flex justify-end">
                       <button type="button" onClick={() => { setMode('forgot'); setError(null); setSuccessMsg(null); }} className="text-[10px] font-bold text-lumina-accent hover:underline uppercase tracking-widest">Forgot Password?</button>
@@ -612,7 +640,7 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                       <div className="text-red-500 text-xs font-bold text-center mt-2">{error}</div>
                     )}
 
-                    <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-4 disabled:opacity-50">
+                    <button type="submit" disabled={loading} data-testid="login-submit-btn" className="btn-primary w-full py-4 mt-4 disabled:opacity-50">
                       {loading ? 'Authenticating...' : 'Login to System'}
                     </button>
                     
@@ -636,7 +664,7 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                         <path fill="#FBBC05" d="M5.33 14.24c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09L1.24 6.63C.45 8.24 0 10.07 0 12s.45 3.76 1.24 5.37l4.09-3.13z" />
                         <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96L1.24 17.42C3.25 21.31 7.31 24 12 24z" />
                       </svg>
-                      Google Neural Auth
+                      Google Sign In
                     </button>
 
                     <p className="text-center text-xs text-lumina-text/30 mt-6">
@@ -675,21 +703,32 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-lumina-text/40 ml-1">Password</label>
-                      <input 
-                        type="password" 
-                        placeholder="••••••••" 
-                        className="input-lumina" 
-                        required 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
+                      <div className="relative">
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          className="input-lumina pr-12" 
+                          required 
+                          data-testid="signup-password-input"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <button 
+                          type="button"
+                          data-testid="signup-toggle-password"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-lumina-text/30 hover:text-lumina-accent transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
                     
                     {error && (
                       <div className="text-red-500 text-xs font-bold text-center mt-2">{error}</div>
                     )}
 
-                    <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-4 disabled:opacity-50">
+                    <button type="submit" disabled={loading} data-testid="signup-submit-btn" className="btn-primary w-full py-4 mt-4 disabled:opacity-50">
                       {loading ? 'Initializing...' : 'Initialize Profile'}
                     </button>
 
@@ -713,7 +752,7 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                         <path fill="#FBBC05" d="M5.33 14.24c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09L1.24 6.63C.45 8.24 0 10.07 0 12s.45 3.76 1.24 5.37l4.09-3.13z" />
                         <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96L1.24 17.42C3.25 21.31 7.31 24 12 24z" />
                       </svg>
-                      Google Neural Auth
+                      Google Sign In
                     </button>
 
                     <p className="text-center text-xs text-lumina-text/30 mt-6">
@@ -743,6 +782,55 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
       </AnimatePresence>
     </div>
   );
+};
+
+const SUBJECT_IMAGES: Record<string, string> = {
+  'Mathematics': 'https://images.unsplash.com/photo-1635372722656-389f87a941b7?auto=format&fit=crop&q=80&w=1000',
+  'Physics': 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?auto=format&fit=crop&q=80&w=1000',
+  'Chemistry': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=1000',
+  'Biology': 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?auto=format&fit=crop&q=80&w=1000',
+  'Computer Science': 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=1000',
+  'History': 'https://images.unsplash.com/photo-1461360370896-922624d12a74?auto=format&fit=crop&q=80&w=1000',
+  'English': 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=1000',
+  'Geography': 'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1000',
+  'Psychology': 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&q=80&w=1000',
+  'Economics': 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&q=80&w=1000',
+  'default': 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1000',
+};
+
+const getSubjectImage = (name: string): string => {
+  for (const key of Object.keys(SUBJECT_IMAGES)) {
+    if (name.toLowerCase().includes(key.toLowerCase())) return SUBJECT_IMAGES[key];
+  }
+  const keys = Object.keys(SUBJECT_IMAGES).filter(k => k !== 'default');
+  const hash = name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  return keys[hash % keys.length] ? SUBJECT_IMAGES[keys[hash % keys.length]] : SUBJECT_IMAGES['default'];
+};
+
+const getRankIcon = (rank: string) => {
+  const r = rank.toLowerCase();
+  if (r.includes('radiant')) return <Crown size={16} className="text-yellow-300" />;
+  if (r.includes('immortal')) return <Gem size={16} className="text-red-400" />;
+  if (r.includes('ascendant')) return <Sparkles size={16} className="text-green-400" />;
+  if (r.includes('diamond')) return <Gem size={16} className="text-cyan-300" />;
+  if (r.includes('platinum')) return <Trophy size={16} className="text-blue-300" />;
+  if (r.includes('gold')) return <Medal size={16} className="text-yellow-400" />;
+  if (r.includes('silver')) return <Shield size={16} className="text-gray-300" />;
+  if (r.includes('bronze')) return <Shield size={16} className="text-amber-600" />;
+  return <Shield size={16} className="text-gray-500" />;
+};
+
+const getRankColor = (rank: string) => {
+  const r = rank.toLowerCase();
+  if (r.includes('radiant')) return 'from-yellow-300 to-amber-500';
+  if (r.includes('immortal')) return 'from-red-400 to-pink-500';
+  if (r.includes('ascendant')) return 'from-green-400 to-emerald-500';
+  if (r.includes('diamond')) return 'from-cyan-300 to-blue-400';
+  if (r.includes('platinum')) return 'from-blue-300 to-indigo-400';
+  if (r.includes('gold')) return 'from-yellow-400 to-orange-400';
+  if (r.includes('silver')) return 'from-gray-300 to-gray-400';
+  if (r.includes('bronze')) return 'from-amber-600 to-orange-700';
+  return 'from-gray-500 to-gray-600';
 };
 
 const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (topic: Topic) => void, user: UserProfile, subjects: Subject[], noteCount: number }) => {
@@ -850,13 +938,15 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (
           {/* Neural Load - Medium Card */}
           <div className="md:col-span-4 card-lumina flex flex-col">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold">Neural Load</h3>
+              <h3 className="text-lg font-bold">Retention Curve</h3>
               <TrendingUp size={18} className="text-lumina-accent" />
             </div>
             <div className="flex-1 min-h-[150px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={[
-                  { val: 40 }, { val: 30 }, { val: 65 }, { val: 45 }, { val: 90 }, { val: 70 }, { val: 85 }
+                  { day: 'D1', retention: 95 }, { day: 'D2', retention: 80 }, { day: 'D3', retention: 65 },
+                  { day: 'D5', retention: 55 }, { day: 'D7', retention: 50 }, { day: 'D14', retention: 45 },
+                  { day: 'D21', retention: 60 }, { day: 'D30', retention: 75 }, { day: 'D45', retention: 85 }
                 ]}>
                   <defs>
                     <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
@@ -864,13 +954,13 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (
                       <stop offset="95%" stopColor="#d4ff00" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <Area type="monotone" dataKey="val" stroke="#d4ff00" fill="url(#colorVal)" strokeWidth={3} />
+                  <Area type="monotone" dataKey="retention" stroke="#d4ff00" fill="url(#colorVal)" strokeWidth={3} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
             <div className="mt-6 pt-6 border-t border-white/5 flex justify-between items-center">
-              <span className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">Peak Performance</span>
-              <span className="text-sm font-bold text-lumina-accent">92%</span>
+              <span className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">Optimizing for 85%</span>
+              <span className="text-sm font-bold text-lumina-accent">85%</span>
             </div>
           </div>
 
@@ -891,17 +981,56 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (
             </div>
             <div>
               <div className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-1">Neural Rank</div>
-              <div className="text-xl font-display font-bold text-lumina-accent uppercase tracking-widest">{user.rank}</div>
+              <div className="flex items-center gap-2">
+                {getRankIcon(user.rank)}
+                <span className={`text-lg font-display font-bold bg-gradient-to-r ${getRankColor(user.rank)} bg-clip-text text-transparent uppercase tracking-wider`}>{user.rank}</span>
+              </div>
             </div>
           </div>
 
           <div className="md:col-span-3 card-lumina flex flex-col justify-between">
             <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-              <Target size={20} className="text-lumina-text/40" />
+              <Zap size={20} className="text-lumina-accent" />
             </div>
             <div>
-              <div className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-1">Global Rank</div>
-              <div className="text-3xl font-display font-bold">#{user.globalRank}</div>
+              <div className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-1">Total XP</div>
+              <div className="text-3xl font-display font-bold text-lumina-accent">{user.xp.toLocaleString()}</div>
+            </div>
+          </div>
+
+          {/* Neural Load Distribution - Wide Card */}
+          <div className="md:col-span-6 card-lumina">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-lg font-bold">Neural Load Distribution</h3>
+              <Zap size={18} className="text-lumina-accent" />
+            </div>
+            <div className="h-48 w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={subjects.length > 0 ? subjects.map(s => ({ name: s.name, value: Math.max(s.topics.length, 1) })) : [{ name: 'Empty', value: 1 }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={8}
+                    dataKey="value"
+                  >
+                    {(subjects.length > 0 ? subjects : [{ name: 'Empty' }]).map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={['#d4ff00', '#ffffff', '#333333', '#666666', '#ffcc00', '#00ff88'][index % 6]} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '12px', fontSize: '10px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4 mt-4">
+              {subjects.slice(0, 4).map((s, i) => (
+                <div key={s.id} className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#d4ff00', '#ffffff', '#333333', '#666666'][i % 4] }} />
+                  <span className="text-[8px] font-bold text-lumina-text/40 uppercase tracking-widest">{s.name}</span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -943,7 +1072,12 @@ const FocusView = ({
   activeTopic: Topic | null, 
   onFinishTopic: (t: Topic) => void 
 }) => {
-  const [timeLeft, setTimeLeft] = useState(settings.workTime * 60);
+  const [customWork, setCustomWork] = useState(settings.workTime);
+  const [customShort, setCustomShort] = useState(settings.shortBreak);
+  const [customLong, setCustomLong] = useState(settings.longBreak);
+  const [timerMode, setTimerMode] = useState<'pomodoro' | 'countdown' | 'stopwatch'>('pomodoro');
+  const [timeLeft, setTimeLeft] = useState(customWork * 60);
+  const [stopwatchTime, setStopwatchTime] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'work' | 'short' | 'long'>('work');
   const [phase, setPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
@@ -951,35 +1085,55 @@ const FocusView = ({
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [hardcoreMode, setHardcoreMode] = useState(false);
   const [sessionFailed, setSessionFailed] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [pomodoroCount, setPomodoroCount] = useState(0);
+  const [sessionsBeforeLong, setSessionsBeforeLong] = useState(4);
 
   useEffect(() => {
     let timer: any;
-    if (isActive && timeLeft > 0) {
-      timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-    } else if (timeLeft === 0) {
-      setIsActive(false);
-      if (mode === 'work') setShowFinishModal(true);
+    if (timerMode === 'stopwatch') {
+      if (isActive) {
+        timer = setInterval(() => setStopwatchTime(t => t + 1), 1000);
+      }
+    } else {
+      if (isActive && timeLeft > 0) {
+        timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+      } else if (timeLeft === 0 && isActive) {
+        setIsActive(false);
+        if (timerMode === 'pomodoro' && mode === 'work') {
+          const newCount = pomodoroCount + 1;
+          setPomodoroCount(newCount);
+          if (newCount % sessionsBeforeLong === 0) {
+            setMode('long');
+            setTimeLeft(customLong * 60);
+          } else {
+            setMode('short');
+            setTimeLeft(customShort * 60);
+          }
+        } else if (timerMode === 'pomodoro' && (mode === 'short' || mode === 'long')) {
+          setMode('work');
+          setTimeLeft(customWork * 60);
+        }
+        if (mode === 'work') setShowFinishModal(true);
+      }
     }
     return () => clearInterval(timer);
-  }, [isActive, timeLeft, mode]);
+  }, [isActive, timeLeft, mode, timerMode, stopwatchTime, customWork, customShort, customLong, pomodoroCount, sessionsBeforeLong]);
 
   useEffect(() => {
     if (!isActive || !hardcoreMode) return;
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         setIsActive(false);
         setSessionFailed(true);
       }
     };
-
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
         setIsActive(false);
         setSessionFailed(true);
       }
     };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => {
@@ -997,16 +1151,16 @@ const FocusView = ({
   }, [isActive]);
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
+    if (hrs > 0) return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const toggleTimer = () => {
     if (!isActive && hardcoreMode) {
-      document.documentElement.requestFullscreen().catch(() => {
-        // Fallback for fullscreen error
-      });
+      document.documentElement.requestFullscreen().catch(() => {});
     }
     setIsActive(!isActive);
   };
@@ -1014,57 +1168,77 @@ const FocusView = ({
   const resetTimer = (newMode: 'work' | 'short' | 'long') => {
     setMode(newMode);
     setIsActive(false);
-    setTimeLeft((newMode === 'work' ? settings.workTime : newMode === 'short' ? settings.shortBreak : settings.longBreak) * 60);
+    setTimeLeft((newMode === 'work' ? customWork : newMode === 'short' ? customShort : customLong) * 60);
   };
+
+  const resetStopwatch = () => {
+    setIsActive(false);
+    setStopwatchTime(0);
+  };
+
+  const applyCustomTime = (mins: number) => {
+    setCustomWork(mins);
+    if (!isActive && mode === 'work') {
+      setTimeLeft(mins * 60);
+    }
+  };
+
+  const timePresets = [15, 25, 30, 45, 50, 60, 90, 120];
+
+  const totalTime = timerMode === 'stopwatch' ? 1 : (mode === 'work' ? customWork : mode === 'short' ? customShort : customLong) * 60;
+  const displayTime = timerMode === 'stopwatch' ? stopwatchTime : timeLeft;
+  const progress = timerMode === 'stopwatch' ? Math.min(stopwatchTime / 1500, 1) : (totalTime - timeLeft) / totalTime;
 
   return (
     <div className="pt-32 px-6 pb-20 min-h-screen relative font-sans overflow-hidden">
-      {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-lumina-accent/5 rounded-full blur-[120px] animate-pulse" />
       </div>
 
-      <div className="max-w-4xl mx-auto relative z-10">
-        <div className="flex flex-col items-center text-center mb-16">
+      <div className="max-w-5xl mx-auto relative z-10">
+        <div className="flex flex-col items-center text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-lumina-text/40 text-[10px] font-bold uppercase tracking-widest mb-6">
             <Brain size={12} />
             Deep Focus Protocol
           </div>
           <h1 className="text-5xl md:text-6xl font-display font-bold text-lumina-text tracking-tight mb-4">
-            {mode === 'work' ? 'Deep Work' : mode === 'short' ? 'Short Rest' : 'Long Rest'}
+            {timerMode === 'stopwatch' ? 'Stopwatch' : mode === 'work' ? 'Deep Work' : mode === 'short' ? 'Short Rest' : 'Long Rest'}
           </h1>
           {activeTopic && (
             <p className="text-lumina-accent font-bold uppercase tracking-[0.2em] text-xs">
               Focusing on: {activeTopic.name}
             </p>
           )}
+          {timerMode === 'pomodoro' && (
+            <div className="flex items-center gap-2 mt-3">
+              {Array.from({ length: sessionsBeforeLong }).map((_, i) => (
+                <div key={i} className={`w-3 h-3 rounded-full transition-all ${i < (pomodoroCount % sessionsBeforeLong) ? 'bg-lumina-accent shadow-[0_0_8px_rgba(212,255,0,0.5)]' : 'bg-white/10'}`} />
+              ))}
+              <span className="text-[10px] text-lumina-text/30 ml-2 uppercase tracking-widest">{pomodoroCount} sessions</span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {/* Timer Section */}
           <div className="md:col-span-8 card-lumina flex flex-col items-center justify-center py-16 relative">
-            {/* Timer Ring */}
             <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center mb-12">
               <svg className="absolute inset-0 w-full h-full -rotate-90">
-                <circle 
-                  cx="50%" cy="50%" r="48%" 
-                  className="stroke-white/5 fill-none" 
-                  strokeWidth="4" 
-                />
+                <circle cx="50%" cy="50%" r="48%" className="stroke-white/5 fill-none" strokeWidth="4" />
                 <motion.circle 
                   cx="50%" cy="50%" r="48%" 
                   className="stroke-lumina-accent fill-none" 
                   strokeWidth="4"
                   strokeDasharray="100 100"
                   initial={{ strokeDashoffset: 100 }}
-                  animate={{ strokeDashoffset: 100 - (timeLeft / (settings.workTime * 60)) * 100 }}
+                  animate={{ strokeDashoffset: 100 - progress * 100 }}
                   transition={{ duration: 1, ease: "linear" }}
                 />
               </svg>
               <div className="text-7xl md:text-8xl font-display font-bold text-lumina-text tracking-tighter tabular-nums">
-                {formatTime(timeLeft)}
+                {formatTime(displayTime)}
               </div>
-              {isActive && (
+              {isActive && timerMode !== 'stopwatch' && (
                 <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -1078,6 +1252,7 @@ const FocusView = ({
             <div className="flex items-center gap-4">
               <button 
                 onClick={toggleTimer}
+                data-testid="focus-play-pause-btn"
                 className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
                   isActive 
                     ? 'bg-white/5 border border-white/10 text-lumina-text hover:bg-white/10' 
@@ -1087,7 +1262,8 @@ const FocusView = ({
                 {isActive ? <Pause size={32} fill="currentColor" /> : <Play size={32} className="ml-1" fill="currentColor" />}
               </button>
               <button 
-                onClick={() => resetTimer(mode)}
+                onClick={() => timerMode === 'stopwatch' ? resetStopwatch() : resetTimer(mode)}
+                data-testid="focus-reset-btn"
                 className="w-14 h-14 rounded-full bg-white/5 border border-white/10 text-lumina-text/40 flex items-center justify-center hover:bg-white/10 hover:text-lumina-text transition-all"
               >
                 <RotateCcw size={20} />
@@ -1095,6 +1271,7 @@ const FocusView = ({
               {activeTopic && (
                 <button 
                   onClick={() => setShowFinishModal(true)}
+                  data-testid="focus-finish-btn"
                   className="w-14 h-14 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-all"
                 >
                   <CheckCheck size={20} />
@@ -1105,24 +1282,138 @@ const FocusView = ({
 
           {/* Controls Section */}
           <div className="md:col-span-4 space-y-6">
+            {/* Timer Mode Selector */}
             <div className="card-lumina">
-              <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Session Mode</h3>
+              <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Timer Mode</h3>
               <div className="space-y-2">
-                {(['work', 'short', 'long'] as const).map((m) => (
+                {([
+                  { key: 'pomodoro' as const, label: 'Pomodoro', icon: <Timer size={14} /> },
+                  { key: 'countdown' as const, label: 'Countdown', icon: <Clock size={14} /> },
+                  { key: 'stopwatch' as const, label: 'Stopwatch', icon: <TimerReset size={14} /> },
+                ]).map((m) => (
                   <button
-                    key={m}
-                    onClick={() => resetTimer(m)}
-                    className={`w-full py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all text-left flex items-center justify-between ${
-                      mode === m 
+                    key={m.key}
+                    onClick={() => {
+                      setTimerMode(m.key);
+                      setIsActive(false);
+                      if (m.key === 'stopwatch') setStopwatchTime(0);
+                      else setTimeLeft(customWork * 60);
+                      setMode('work');
+                    }}
+                    data-testid={`timer-mode-${m.key}`}
+                    className={`w-full py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all text-left flex items-center gap-3 ${
+                      timerMode === m.key 
                         ? 'bg-lumina-accent text-black' 
                         : 'bg-white/5 text-lumina-text/40 hover:bg-white/10'
                     }`}
                   >
-                    {m === 'work' ? 'Deep Work' : m === 'short' ? 'Short Break' : 'Long Break'}
-                    {mode === m && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
+                    {m.icon}
+                    {m.label}
+                    {timerMode === m.key && <div className="w-1.5 h-1.5 rounded-full bg-black ml-auto" />}
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Session Mode (Pomodoro only) */}
+            {timerMode === 'pomodoro' && (
+              <div className="card-lumina">
+                <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Session Phase</h3>
+                <div className="space-y-2">
+                  {(['work', 'short', 'long'] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => resetTimer(m)}
+                      data-testid={`session-phase-${m}`}
+                      className={`w-full py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all text-left flex items-center justify-between ${
+                        mode === m 
+                          ? 'bg-lumina-accent text-black' 
+                          : 'bg-white/5 text-lumina-text/40 hover:bg-white/10'
+                      }`}
+                    >
+                      {m === 'work' ? 'Deep Work' : m === 'short' ? 'Short Break' : 'Long Break'}
+                      {mode === m && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Timer Customization */}
+            <div className="card-lumina">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">Customize Time</h3>
+                <button 
+                  onClick={() => setShowSettings(!showSettings)}
+                  data-testid="toggle-timer-settings"
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${showSettings ? 'bg-lumina-accent text-black' : 'bg-white/5 text-lumina-text/40 hover:bg-white/10'}`}
+                >
+                  <Sliders size={14} />
+                </button>
+              </div>
+              
+              {/* Quick Presets */}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {timePresets.map(p => (
+                  <button
+                    key={p}
+                    onClick={() => applyCustomTime(p)}
+                    data-testid={`preset-${p}min`}
+                    className={`py-2 rounded-lg text-[10px] font-bold transition-all ${
+                      customWork === p && mode === 'work'
+                        ? 'bg-lumina-accent/20 text-lumina-accent border border-lumina-accent/30' 
+                        : 'bg-white/5 text-lumina-text/40 border border-transparent hover:border-white/10'
+                    }`}
+                  >
+                    {p}m
+                  </button>
+                ))}
+              </div>
+
+              {showSettings && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="space-y-4 mt-4 pt-4 border-t border-white/5"
+                >
+                  <div>
+                    <label className="text-[9px] font-bold text-lumina-text/30 uppercase tracking-widest mb-2 block">Focus: {customWork} min</label>
+                    <input 
+                      type="range" min="5" max="120" value={customWork}
+                      onChange={(e) => { const v = Number(e.target.value); setCustomWork(v); if (!isActive && mode === 'work') setTimeLeft(v * 60); }}
+                      data-testid="focus-duration-slider"
+                      className="w-full accent-lumina-accent h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-lumina-text/30 uppercase tracking-widest mb-2 block">Short Break: {customShort} min</label>
+                    <input 
+                      type="range" min="1" max="30" value={customShort}
+                      onChange={(e) => { const v = Number(e.target.value); setCustomShort(v); if (!isActive && mode === 'short') setTimeLeft(v * 60); }}
+                      data-testid="short-break-slider"
+                      className="w-full accent-lumina-accent h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-lumina-text/30 uppercase tracking-widest mb-2 block">Long Break: {customLong} min</label>
+                    <input 
+                      type="range" min="5" max="60" value={customLong}
+                      onChange={(e) => { const v = Number(e.target.value); setCustomLong(v); if (!isActive && mode === 'long') setTimeLeft(v * 60); }}
+                      data-testid="long-break-slider"
+                      className="w-full accent-lumina-accent h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-lumina-text/30 uppercase tracking-widest mb-2 block">Sessions before long break: {sessionsBeforeLong}</label>
+                    <input 
+                      type="range" min="2" max="8" value={sessionsBeforeLong}
+                      onChange={(e) => setSessionsBeforeLong(Number(e.target.value))}
+                      data-testid="sessions-before-long-slider"
+                      className="w-full accent-lumina-accent h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                </motion.div>
+              )}
             </div>
 
             <div className="card-lumina">
@@ -1130,6 +1421,7 @@ const FocusView = ({
                 <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">Hardcore Mode</h3>
                 <button 
                   onClick={() => setHardcoreMode(!hardcoreMode)}
+                  data-testid="hardcore-mode-toggle"
                   className={`w-10 h-5 rounded-full relative transition-all ${hardcoreMode ? 'bg-lumina-accent' : 'bg-white/10'}`}
                 >
                   <motion.div 
@@ -1146,17 +1438,26 @@ const FocusView = ({
             <div className="card-lumina">
               <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Neural Ambience</h3>
               <div className="grid grid-cols-2 gap-2">
-                {['None', 'Rain', 'Lo-Fi', 'Waves'].map((music) => (
+                {[
+                  { name: 'None', icon: <X size={12} /> },
+                  { name: 'Rain', icon: <CloudRain size={12} /> },
+                  { name: 'Lo-Fi', icon: <Headphones size={12} /> },
+                  { name: 'Waves', icon: <Music size={12} /> },
+                  { name: 'Forest', icon: <Sun size={12} /> },
+                  { name: 'Night', icon: <Moon size={12} /> },
+                ].map((music) => (
                   <button
-                    key={music}
-                    onClick={() => setSelectedMusic(music)}
-                    className={`py-2 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                      selectedMusic === music 
+                    key={music.name}
+                    onClick={() => setSelectedMusic(music.name)}
+                    data-testid={`ambience-${music.name.toLowerCase()}`}
+                    className={`py-2 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
+                      selectedMusic === music.name 
                         ? 'bg-lumina-accent/20 text-lumina-accent border border-lumina-accent/30' 
                         : 'bg-white/5 text-lumina-text/40 border border-transparent hover:border-white/10'
                     }`}
                   >
-                    {music}
+                    {music.icon}
+                    {music.name}
                   </button>
                 ))}
               </div>
@@ -1899,26 +2200,6 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
     value: Math.floor(Math.random() * 5)
   }));
 
-  const retentionData = [
-    { day: 0, retention: 100 },
-    { day: 1, retention: 85 },
-    { day: 3, retention: 72 },
-    { day: 7, retention: 64 },
-    { day: 14, retention: 58 },
-    { day: 30, retention: 52 },
-  ];
-
-  const focusData = subjects.map(subject => {
-    const value = subject.topics.reduce((acc, topic) => acc + (topic.progress * topic.chapters), 0);
-    return { name: subject.name, value: value > 0 ? value : 10 };
-  }).filter(d => d.value > 0).slice(0, 5);
-
-  if (focusData.length === 0) {
-    focusData.push({ name: 'Empty Repository', value: 100 });
-  }
-
-  const COLORS = ['#d4ff00', '#ffffff', '#333333', '#666666'];
-
   return (
     <div className="pt-32 px-6 pb-20 min-h-screen relative font-sans">
       <div className="max-w-7xl mx-auto relative z-10">
@@ -1931,9 +2212,14 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
             <h1 className="text-5xl font-display font-bold text-lumina-text tracking-tight">Profile</h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest mb-1">Neural Rank</span>
-              <span className="text-sm font-bold text-lumina-accent uppercase tracking-widest">{user.rank}</span>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getRankColor(user.rank)} flex items-center justify-center shadow-lg`}>
+                {getRankIcon(user.rank)}
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest mb-1">Rank</span>
+                <span className={`text-sm font-bold bg-gradient-to-r ${getRankColor(user.rank)} bg-clip-text text-transparent uppercase tracking-widest`}>{user.rank}</span>
+              </div>
             </div>
             <div className="w-px h-10 bg-white/10" />
             <button 
@@ -2065,71 +2351,45 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
 
           {/* Analytics Column */}
           <div className="lg:col-span-8 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="card-lumina p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">Retention Curve</h3>
-                  <TrendingUp size={16} className="text-lumina-accent" />
-                </div>
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={retentionData}>
-                      <defs>
-                        <linearGradient id="colorRetention" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#d4ff00" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#d4ff00" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="day" hide />
-                      <YAxis hide domain={[0, 100]} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '12px', fontSize: '10px' }}
-                        itemStyle={{ color: '#d4ff00' }}
-                      />
-                      <Area type="monotone" dataKey="retention" stroke="#d4ff00" strokeWidth={3} fillOpacity={1} fill="url(#colorRetention)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-                <p className="text-[10px] text-lumina-text/30 mt-6 leading-relaxed uppercase tracking-widest text-center">
-                  Spaced repetition algorithms optimizing for 85% threshold.
-                </p>
+            {/* Rank Progression Card */}
+            <div className="card-lumina p-8">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">Rank Progression</h3>
+                <Trophy size={16} className="text-lumina-accent" />
               </div>
-
-              <div className="card-lumina p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">Neural Load Distribution</h3>
-                  <Zap size={16} className="text-lumina-accent" />
-                </div>
-                <div className="h-64 w-full flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={focusData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={8}
-                        dataKey="value"
-                      >
-                        {focusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '12px', fontSize: '10px' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex flex-wrap justify-center gap-4 mt-6">
-                  {focusData.map((d, i) => (
-                    <div key={d.name} className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                      <span className="text-[8px] font-bold text-lumina-text/40 uppercase tracking-widest">{d.name}</span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { rank: 'Iron', minXp: 0, icon: <Shield size={20} className="text-gray-500" />, color: 'from-gray-500 to-gray-600' },
+                  { rank: 'Bronze', minXp: 500, icon: <Shield size={20} className="text-amber-600" />, color: 'from-amber-600 to-orange-700' },
+                  { rank: 'Silver', minXp: 1200, icon: <Shield size={20} className="text-gray-300" />, color: 'from-gray-300 to-gray-400' },
+                  { rank: 'Gold', minXp: 2200, icon: <Medal size={20} className="text-yellow-400" />, color: 'from-yellow-400 to-orange-400' },
+                  { rank: 'Platinum', minXp: 3500, icon: <Trophy size={20} className="text-blue-300" />, color: 'from-blue-300 to-indigo-400' },
+                  { rank: 'Diamond', minXp: 5200, icon: <Gem size={20} className="text-cyan-300" />, color: 'from-cyan-300 to-blue-400' },
+                  { rank: 'Ascendant', minXp: 7500, icon: <Sparkles size={20} className="text-green-400" />, color: 'from-green-400 to-emerald-500' },
+                  { rank: 'Radiant', minXp: 14000, icon: <Crown size={20} className="text-yellow-300" />, color: 'from-yellow-300 to-amber-500' },
+                ].map((r) => {
+                  const isUnlocked = user.xp >= r.minXp;
+                  const isCurrent = user.rank.toLowerCase().includes(r.rank.toLowerCase());
+                  return (
+                    <div 
+                      key={r.rank}
+                      className={`p-4 rounded-2xl border transition-all ${
+                        isCurrent 
+                          ? 'bg-lumina-accent/10 border-lumina-accent/30 shadow-[0_0_20px_rgba(212,255,0,0.1)]' 
+                          : isUnlocked 
+                            ? 'bg-white/5 border-white/10' 
+                            : 'bg-white/[0.02] border-white/5 opacity-40'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${isUnlocked ? `bg-gradient-to-br ${r.color}` : 'bg-white/5'}`}>
+                        {r.icon}
+                      </div>
+                      <div className="text-xs font-bold text-lumina-text uppercase tracking-tight">{r.rank}</div>
+                      <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest mt-1">{r.minXp.toLocaleString()} XP</div>
+                      {isCurrent && <div className="w-full h-0.5 bg-lumina-accent rounded-full mt-2" />}
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -2171,6 +2431,32 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
 };
 
 const NotificationsView = ({ notifications }: { notifications: Notification[] }) => {
+  const engagementMessages = [
+    { emoji: '🧠', title: 'Memory Fade Alert!', message: 'Your Quantum Physics chapter is slipping away! Review now before it vanishes from your neural pathways!', type: 'reminder' as const },
+    { emoji: '🔥', title: 'Streak on Fire!', message: 'You\'re on a roll! Keep the momentum going - your brain is in peak learning mode right now!', type: 'achievement' as const },
+    { emoji: '🌟', title: 'New Milestone Unlocked!', message: 'Congratulations! You\'ve mastered 5 chapters this week. That\'s legendary progress!', type: 'achievement' as const },
+    { emoji: '⏰', title: 'Time to MemorEase!', message: 'Your Biology notes are about to fade from memory. A quick 10-min review will lock them in for another week!', type: 'reminder' as const },
+    { emoji: '🎯', title: 'Daily Goal Reminder', message: 'You\'re 1 session away from completing today\'s focus goal. Let\'s crush it!', type: 'system' as const },
+    { emoji: '💪', title: 'Level Up Incoming!', message: 'Just 50 more XP to reach the next level! One quick focus session will get you there!', type: 'achievement' as const },
+    { emoji: '📚', title: 'Knowledge Decay Warning', message: 'Your Chemistry formulas haven\'t been reviewed in 5 days. They\'re fading fast - MemorEase them now!', type: 'reminder' as const },
+    { emoji: '🏆', title: 'Weekly Champion!', message: 'You studied more than 90% of users this week! Keep up the incredible work, champion!', type: 'achievement' as const },
+    { emoji: '🌊', title: 'Focus Wave Available', message: 'Your brain\'s peak focus window is NOW based on your study patterns. Start a deep work session!', type: 'system' as const },
+    { emoji: '🎓', title: 'Mastery Achievement!', message: 'You\'ve reached 100% mastery on Neural Architecture! Your knowledge is now deeply embedded!', type: 'achievement' as const },
+  ];
+
+  const allNotifications = [
+    ...notifications,
+    ...engagementMessages.map((m, i) => ({
+      id: `eng-${i}`,
+      uid: '',
+      title: m.title,
+      message: m.message,
+      time: ['Just now', '2m ago', '15m ago', '1h ago', '3h ago', 'Today', 'Yesterday', '2d ago', '3d ago', 'Last week'][i],
+      type: m.type,
+      isRead: i > 3,
+    }))
+  ];
+
   const markAllRead = async () => {
     try {
       const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
@@ -2186,11 +2472,25 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
   };
 
   const deleteNotification = async (id: string) => {
+    if (id.startsWith('eng-')) return;
     try {
       await supabase.from('notifications').delete().eq('id', id);
     } catch (error) {
       console.error('Error deleting notification:', error);
     }
+  };
+
+  const getNotifIcon = (type: string, emoji?: string) => {
+    if (emoji) return <span className="text-2xl">{emoji}</span>;
+    if (type === 'reminder') return <Clock size={20} />;
+    if (type === 'achievement') return <Award size={20} />;
+    return <Zap size={20} />;
+  };
+
+  const getNotifBg = (type: string) => {
+    if (type === 'reminder') return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+    if (type === 'achievement') return 'bg-lumina-accent/10 text-lumina-accent border-lumina-accent/20';
+    return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
   };
 
   return (
@@ -2203,9 +2503,11 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
               System Logs
             </div>
             <h1 className="text-5xl font-display font-bold text-lumina-text tracking-tight">Notifications</h1>
+            <p className="text-sm text-lumina-text/30 mt-2">Stay on top of your learning journey</p>
           </div>
           <button 
             onClick={markAllRead}
+            data-testid="clear-all-notifications"
             className="text-[10px] font-bold text-lumina-accent hover:underline flex items-center gap-2 uppercase tracking-widest"
           >
             <CheckCheck size={14} /> Clear All
@@ -2213,41 +2515,48 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
         </header>
 
         <div className="space-y-4">
-          {notifications.length > 0 ? (
-            notifications.map((n, i) => (
-              <motion.div
-                key={n.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className={`card-lumina p-6 flex items-start gap-6 relative group transition-all ${!n.isRead ? 'border-lumina-accent/50' : ''}`}
-              >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                  n.type === 'reminder' ? 'bg-lumina-accent/10 text-lumina-accent' :
-                  n.type === 'achievement' ? 'bg-white/10 text-white' : 'bg-white/5 text-lumina-text/40'
-                }`}>
-                  {n.type === 'reminder' ? <Clock size={20} /> : n.type === 'achievement' ? <Award size={20} /> : <Zap size={20} />}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-sm font-bold text-lumina-text uppercase tracking-tight">{n.title}</h3>
-                    <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">{n.time}</span>
+          {allNotifications.length > 0 ? (
+            allNotifications.map((n, i) => {
+              const engMsg = engagementMessages.find(e => e.title === n.title);
+              return (
+                <motion.div
+                  key={n.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  data-testid={`notification-item-${n.id}`}
+                  className={`card-lumina p-6 flex items-start gap-6 relative group transition-all ${!n.isRead ? 'border-lumina-accent/50' : ''}`}
+                >
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${getNotifBg(n.type)}`}>
+                    {getNotifIcon(n.type, engMsg?.emoji)}
                   </div>
-                  <p className="text-xs text-lumina-text/40 leading-relaxed">{n.message}</p>
-                </div>
-                <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={() => deleteNotification(n.id)}
-                    className="w-10 h-10 rounded-xl bg-white/5 text-lumina-text/40 flex items-center justify-center hover:bg-red-500 hover:text-black transition-all"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-                {!n.isRead && (
-                  <div className="absolute top-4 left-4 w-2 h-2 bg-lumina-accent rounded-full animate-pulse" />
-                )}
-              </motion.div>
-            ))
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-sm font-bold text-lumina-text tracking-tight flex items-center gap-2">
+                        {n.title}
+                        {!n.isRead && <span className="w-2 h-2 bg-lumina-accent rounded-full inline-block animate-pulse" />}
+                      </h3>
+                      <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest shrink-0 ml-4">{n.time}</span>
+                    </div>
+                    <p className="text-xs text-lumina-text/50 leading-relaxed">{n.message}</p>
+                    {n.type === 'reminder' && (
+                      <button className="mt-3 text-[10px] font-bold text-lumina-accent uppercase tracking-widest hover:underline flex items-center gap-1">
+                        Review Now <ChevronRight size={12} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => deleteNotification(n.id)}
+                      data-testid={`delete-notification-${n.id}`}
+                      className="w-10 h-10 rounded-xl bg-white/5 text-lumina-text/40 flex items-center justify-center hover:bg-red-500 hover:text-black transition-all"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })
           ) : (
             <div className="py-32 text-center text-lumina-text/10">
               <Zap size={48} className="mx-auto mb-6" />
@@ -2256,19 +2565,33 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
           )}
         </div>
 
-        <div className="mt-16 p-8 card-lumina relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-lumina-accent" />
+        <div className="mt-16 p-8 card-lumina relative overflow-hidden group border-orange-500/30">
+          <div className="absolute top-0 left-0 w-1 h-full bg-orange-500" />
           <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="w-16 h-16 rounded-2xl bg-lumina-accent flex items-center justify-center text-black shadow-2xl group-hover:scale-110 transition-transform">
-              <Brain size={32} />
+            <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+              <span className="text-3xl">🧠</span>
             </div>
             <div className="flex-1 text-center md:text-left">
-              <h3 className="text-lg font-bold text-lumina-text mb-2 uppercase tracking-tight">Memory Decay Alert</h3>
-              <p className="text-xs text-lumina-text/40 uppercase tracking-widest leading-relaxed">
-                Quantum Physics: Schrödinger's Cat is nearing the forgetting threshold. Review now to maintain 90% retention.
+              <h3 className="text-lg font-bold text-lumina-text mb-2 tracking-tight">Memory Decay Alert</h3>
+              <p className="text-xs text-lumina-text/40 leading-relaxed">
+                Your chapters are starting to fade! The forgetting curve is real - a quick 10-minute review can save weeks of relearning. Don't let your hard work slip away!
               </p>
             </div>
-            <button className="btn-primary w-full md:w-auto py-4 px-10 text-[10px] uppercase tracking-[0.2em]">Review Now</button>
+            <button className="btn-primary w-full md:w-auto py-4 px-10 text-[10px] uppercase tracking-[0.2em]" data-testid="review-now-btn">Review Now</button>
+          </div>
+        </div>
+
+        {/* Motivational Banner */}
+        <div className="mt-8 p-6 card-lumina relative overflow-hidden group border-lumina-accent/20">
+          <div className="absolute top-0 left-0 w-1 h-full bg-lumina-accent" />
+          <div className="flex items-center gap-6">
+            <span className="text-4xl">💡</span>
+            <div>
+              <h3 className="text-sm font-bold text-lumina-text mb-1">Pro Tip</h3>
+              <p className="text-xs text-lumina-text/40 leading-relaxed">
+                Students who review within 24 hours retain 80% more information. Your next review session could be the difference between remembering and forgetting!
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -2820,13 +3143,17 @@ export default function App() {
     }
 
     try {
+      // Find the subject name for this topic
+      const parentSubject = subjects.find(s => s.id === subjectId);
+      const subjectImageUrl = parentSubject ? getSubjectImage(parentSubject.name) : SUBJECT_IMAGES['default'];
+      
       await supabase.from('topics').insert({
         name,
         subjectId,
         uid: user.uid,
         progress: 0,
         description: 'New learning module.',
-        imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1000',
+        imageUrl: subjectImageUrl,
         lastReviewed: 'Never',
         nextReview: 'Today',
         chapters: 1,
