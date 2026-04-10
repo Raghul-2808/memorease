@@ -90,7 +90,7 @@ import { GoogleGenAI } from "@google/genai";
 import { supabase } from './supabaseClient';
 
 // --- Types ---
-type View = 'auth' | 'overview' | 'focus' | 'vault' | 'profile' | 'notifications';
+type View = 'auth' | 'overview' | 'focus' | 'vault' | 'profile' | 'notifications' | 'battle';
 type AuthMode = 'landing' | 'login' | 'signup' | 'forgot';
 
 interface Topic {
@@ -269,6 +269,7 @@ const Navbar = ({ currentView, setView, unreadCount, onLogout }: { currentView: 
           <NavLink active={currentView === 'overview'} onClick={() => setView('overview')} icon={<LayoutDashboard size={16} />} label="Metrics" />
           <NavLink active={currentView === 'focus'} onClick={() => setView('focus')} icon={<Timer size={16} />} label="Focus" />
           <NavLink active={currentView === 'vault'} onClick={() => setView('vault')} icon={<Database size={16} />} label="Vault" />
+          <NavLink active={currentView === 'battle'} onClick={() => setView('battle')} icon={<Sword size={16} />} label="Arena" />
           <NavLink active={currentView === 'profile'} onClick={() => setView('profile')} icon={<User size={16} />} label="Profile" />
         </div>
       </div>
@@ -2882,6 +2883,7 @@ const CommandPalette = ({
     { name: 'Neural Dossier', action: () => { setView('profile'); setIsOpen(false); }, icon: <User size={16} /> },
     { name: 'Neural Repository', action: () => { setView('vault'); setIsOpen(false); }, icon: <Database size={16} /> },
     { name: 'Focus Chamber', action: () => { setView('focus'); setIsOpen(false); }, icon: <Timer size={16} /> },
+    { name: 'Battle Arena', action: () => { setView('battle'); setIsOpen(false); }, icon: <Sword size={16} /> },
     { name: 'Command Center', action: () => { setView('overview'); setIsOpen(false); }, icon: <LayoutDashboard size={16} /> },
     { name: 'Terminate Session', action: () => { setView('auth'); setIsOpen(false); }, icon: <LogOut size={16} /> },
   ];
@@ -3740,6 +3742,116 @@ const ClassRaidWidget = ({ user }: { user: UserProfile }) => {
 
 
 
+
+// ========================================
+// BATTLE HUB VIEW (Arena Tab)
+// ========================================
+const BattleHubView = ({ user, subjects, onJumpToFocus, onXpGain }: { 
+  user: UserProfile, 
+  subjects: Subject[], 
+  onJumpToFocus: (t: Topic) => void,
+  onXpGain: (xp: number) => void 
+}) => {
+  return (
+    <div className="pt-32 px-6 pb-20 min-h-screen relative font-sans">
+      <div className="max-w-7xl mx-auto relative z-10">
+        <header className="mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-widest mb-4">
+            <Sword size={12} />
+            Battle Arena
+          </div>
+          <h1 className="text-5xl font-display font-bold text-lumina-text tracking-tight" data-testid="battle-hub-title">Arena</h1>
+          <p className="text-sm text-lumina-text/30 mt-2">Sharpen your skills through combat, raids, and survival challenges</p>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column - Triage + Interceptor */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Triage Mode - Full Card */}
+            <div className="card-lumina p-6 border-red-500/20">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                  <Siren size={18} className="text-red-400" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-lumina-text">Emergency Triage</h2>
+                  <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">Rescue fading memories</p>
+                </div>
+              </div>
+              <TriageModeWidget subjects={subjects} user={user} onJumpToFocus={onJumpToFocus} />
+            </div>
+
+            {/* Distraction Interceptor - Full Card */}
+            <div className="card-lumina p-6 border-lumina-accent/20">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-lumina-accent/10 border border-lumina-accent/20 flex items-center justify-center">
+                  <Crosshair size={18} className="text-lumina-accent" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-lumina-text">Distraction Shield</h2>
+                  <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">Intercept tab switches for +50 XP</p>
+                </div>
+              </div>
+              <DistractionInterceptor 
+                topics={subjects.flatMap(s => s.topics)} 
+                user={user} 
+                onXpGain={onXpGain} 
+              />
+            </div>
+
+            {/* Quick Stats */}
+            <div className="card-lumina p-6">
+              <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-4">Arena Stats</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white/5 rounded-xl p-3 text-center">
+                  <div className="text-xl font-display font-bold text-red-400">{subjects.flatMap(s => s.topics).filter(t => t.progress < 50).length}</div>
+                  <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mt-1">Fading</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-3 text-center">
+                  <div className="text-xl font-display font-bold text-lumina-accent">{user.xp.toLocaleString()}</div>
+                  <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mt-1">Total XP</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-3 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    {getRankIcon(user.rank)}
+                    <span className={`text-sm font-bold bg-gradient-to-r ${getRankColor(user.rank)} bg-clip-text text-transparent`}>{user.rank}</span>
+                  </div>
+                  <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mt-1">Rank</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Raids + Heatmap */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* Class Raids - Expanded */}
+            <ClassRaidWidget user={user} />
+
+            {/* Activity Heatmap */}
+            <ActivityHeatmap />
+
+            {/* Battle Tips */}
+            <div className="card-lumina p-6 border-purple-500/20 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
+              <div className="flex items-start gap-4 ml-2">
+                <span className="text-3xl">💡</span>
+                <div>
+                  <h3 className="text-sm font-bold text-lumina-text mb-1">Arena Pro Tip</h3>
+                  <p className="text-xs text-lumina-text/40 leading-relaxed">
+                    Enable the Distraction Interceptor before starting a focus session. Every time you return from another tab, 
+                    you'll earn +50 XP by recalling a topic. It's the fastest way to rack up XP while building real memory strength!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 export default function App() {
   const [view, setView] = useState<View>('auth');
   const [activeTopic, setActiveTopic] = useState<Topic | null>(null);
@@ -4146,6 +4258,22 @@ export default function App() {
                 onDeleteSubject={handleDeleteSubject}
                 onDeleteTopic={handleDeleteTopic}
                 onJumpToFocus={handleJumpToFocus}
+              />
+            </motion.div>
+          )}
+          {user && view === 'battle' && (
+            <motion.div key="battle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <BattleHubView 
+                user={user} 
+                subjects={subjects} 
+                onJumpToFocus={handleJumpToFocus}
+                onXpGain={(xp: number) => {
+                  if (user) {
+                    const newXp = user.xp + xp;
+                    setUser({ ...user, xp: newXp, rank: getMemorEaseRank(newXp), level: Math.floor(newXp / 100) + 1 });
+                    supabase.from('users').update({ xp: newXp, rank: getMemorEaseRank(newXp), level: Math.floor(newXp / 100) + 1 }).eq('uid', user.uid);
+                  }
+                }}
               />
             </motion.div>
           )}
