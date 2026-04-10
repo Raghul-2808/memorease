@@ -809,27 +809,31 @@ const getSubjectImage = (name: string): string => {
 
 const getRankIcon = (rank: string) => {
   const r = rank.toLowerCase();
-  if (r.includes('radiant')) return <Crown size={16} className="text-yellow-300" />;
-  if (r.includes('immortal')) return <Gem size={16} className="text-red-400" />;
-  if (r.includes('ascendant')) return <Sparkles size={16} className="text-green-400" />;
-  if (r.includes('diamond')) return <Gem size={16} className="text-cyan-300" />;
-  if (r.includes('platinum')) return <Trophy size={16} className="text-blue-300" />;
-  if (r.includes('gold')) return <Medal size={16} className="text-yellow-400" />;
-  if (r.includes('silver')) return <Shield size={16} className="text-gray-300" />;
-  if (r.includes('bronze')) return <Shield size={16} className="text-amber-600" />;
+  if (r.includes('eternal')) return <Crown size={16} className="text-yellow-200" />;
+  if (r.includes('omniscient')) return <Sparkles size={16} className="text-purple-300" />;
+  if (r.includes('transcendent')) return <Gem size={16} className="text-red-400" />;
+  if (r.includes('archon')) return <Star size={16} className="text-cyan-300" />;
+  if (r.includes('luminary')) return <Sparkles size={16} className="text-amber-300" />;
+  if (r.includes('virtuoso')) return <Trophy size={16} className="text-blue-300" />;
+  if (r.includes('sage')) return <Medal size={16} className="text-green-400" />;
+  if (r.includes('adept')) return <Shield size={16} className="text-yellow-400" />;
+  if (r.includes('scholar')) return <BookOpen size={16} className="text-gray-300" />;
+  if (r.includes('apprentice')) return <Shield size={16} className="text-amber-600" />;
   return <Shield size={16} className="text-gray-500" />;
 };
 
 const getRankColor = (rank: string) => {
   const r = rank.toLowerCase();
-  if (r.includes('radiant')) return 'from-yellow-300 to-amber-500';
-  if (r.includes('immortal')) return 'from-red-400 to-pink-500';
-  if (r.includes('ascendant')) return 'from-green-400 to-emerald-500';
-  if (r.includes('diamond')) return 'from-cyan-300 to-blue-400';
-  if (r.includes('platinum')) return 'from-blue-300 to-indigo-400';
-  if (r.includes('gold')) return 'from-yellow-400 to-orange-400';
-  if (r.includes('silver')) return 'from-gray-300 to-gray-400';
-  if (r.includes('bronze')) return 'from-amber-600 to-orange-700';
+  if (r.includes('eternal')) return 'from-yellow-200 via-amber-400 to-orange-500';
+  if (r.includes('omniscient')) return 'from-purple-300 to-violet-500';
+  if (r.includes('transcendent')) return 'from-red-400 to-rose-600';
+  if (r.includes('archon')) return 'from-cyan-300 to-blue-500';
+  if (r.includes('luminary')) return 'from-amber-300 to-yellow-500';
+  if (r.includes('virtuoso')) return 'from-blue-300 to-indigo-500';
+  if (r.includes('sage')) return 'from-green-400 to-emerald-600';
+  if (r.includes('adept')) return 'from-yellow-400 to-orange-500';
+  if (r.includes('scholar')) return 'from-gray-300 to-gray-500';
+  if (r.includes('apprentice')) return 'from-amber-600 to-orange-700';
   return 'from-gray-500 to-gray-600';
 };
 
@@ -1001,61 +1005,91 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (
           {/* Neural Load Distribution - Wide Card */}
           <div className="md:col-span-6 card-lumina">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold">Neural Load Distribution</h3>
+              <h3 className="text-lg font-bold">Study Load Distribution</h3>
               <Zap size={18} className="text-lumina-accent" />
             </div>
-            <div className="h-48 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={subjects.length > 0 ? subjects.map(s => ({ name: s.name, value: Math.max(s.topics.length, 1) })) : [{ name: 'Empty', value: 1 }]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={70}
-                    paddingAngle={8}
-                    dataKey="value"
-                  >
-                    {(subjects.length > 0 ? subjects : [{ name: 'Empty' }]).map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={['#d4ff00', '#ffffff', '#333333', '#666666', '#ffcc00', '#00ff88'][index % 6]} stroke="none" />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '12px', fontSize: '10px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap justify-center gap-4 mt-4">
-              {subjects.slice(0, 4).map((s, i) => (
-                <div key={s.id} className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#d4ff00', '#ffffff', '#333333', '#666666'][i % 4] }} />
-                  <span className="text-[8px] font-bold text-lumina-text/40 uppercase tracking-widest">{s.name}</span>
+            {subjects.length > 0 ? (
+              <>
+                <div className="h-56 w-full flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={subjects.map(s => ({ name: s.name, value: Math.max(s.topics.reduce((acc, t) => acc + t.chapters, 0), 1) }))}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                      >
+                        {subjects.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={['#d4ff00', '#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#fb923c', '#22d3ee'][index % 8]} stroke="none" />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
+                <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4">
+                  {subjects.map((s, i) => (
+                    <div key={s.id} className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ['#d4ff00', '#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#fb923c', '#22d3ee'][i % 8] }} />
+                      <span className="text-[9px] font-bold text-lumina-text/50 uppercase tracking-widest">{s.name}</span>
+                      <span className="text-[9px] font-bold text-lumina-text/20">{s.topics.length} topics</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="h-56 flex flex-col items-center justify-center text-lumina-text/20">
+                <Database size={32} className="mb-3" />
+                <span className="text-xs font-bold uppercase tracking-widest">No subjects yet</span>
+                <span className="text-[10px] text-lumina-text/10 mt-1">Add subjects to see distribution</span>
+              </div>
+            )}
           </div>
 
-          {/* Recent Subjects - Wide Card */}
+          {/* Active Subjects - Wide Card */}
           <div className="md:col-span-6 card-lumina">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold">Neural Subjects</h3>
-              <button className="text-[10px] font-bold text-lumina-accent uppercase tracking-widest hover:underline">View All</button>
+              <h3 className="text-lg font-bold">Active Subjects</h3>
+              <span className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">{subjects.length} total</span>
             </div>
-            <div className="space-y-4">
-              {subjects.slice(0, 3).map((subject, idx) => (
-                <div key={subject.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group cursor-pointer">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-black font-bold ${
-                    idx === 0 ? 'bg-lumina-accent' : idx === 1 ? 'bg-lumina-secondary' : 'bg-white'
-                  }`}>
-                    {subject.name.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-bold mb-1">{subject.name}</div>
-                    <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest">{subject.topics.length} Active Modules</div>
-                  </div>
-                  <ChevronRight size={16} className="text-lumina-text/20 group-hover:text-lumina-accent transition-colors" />
-                </div>
-              ))}
-            </div>
+            {subjects.length > 0 ? (
+              <div className="space-y-3">
+                {subjects.slice(0, 4).map((subject, idx) => {
+                  const totalProgress = subject.topics.length > 0 
+                    ? Math.round(subject.topics.reduce((acc, t) => acc + t.progress, 0) / subject.topics.length)
+                    : 0;
+                  return (
+                    <div key={subject.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group cursor-pointer">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
+                        <img src={getSubjectImage(subject.name)} alt={subject.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold mb-1 truncate">{subject.name}</div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                            <div className="h-full rounded-full bg-lumina-accent transition-all" style={{ width: `${totalProgress}%` }} />
+                          </div>
+                          <span className="text-[10px] font-bold text-lumina-text/40 shrink-0">{totalProgress}%</span>
+                        </div>
+                        <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest mt-1">{subject.topics.length} modules</div>
+                      </div>
+                      <ChevronRight size={16} className="text-lumina-text/20 group-hover:text-lumina-accent transition-colors shrink-0" />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-16 flex flex-col items-center justify-center text-lumina-text/20">
+                <BookOpen size={32} className="mb-3" />
+                <span className="text-xs font-bold uppercase tracking-widest">No subjects yet</span>
+                <span className="text-[10px] text-lumina-text/10 mt-1">Go to Vault to add subjects</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2195,10 +2229,49 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
     }
   };
 
-  const heatmapData = Array.from({ length: 52 * 7 }, (_, i) => ({
-    date: i,
-    value: Math.floor(Math.random() * 5)
-  }));
+  const heatmapData = (() => {
+    const data: { date: string, value: number, month: string, week: number, day: number }[] = [];
+    const now = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (let i = 364; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const weekNum = Math.floor((364 - i) / 7);
+      const dayNum = d.getDay();
+      const isRecent = i < 120;
+      const val = isRecent ? Math.floor(Math.random() * 5) : (Math.random() > 0.7 ? Math.floor(Math.random() * 3) : 0);
+      data.push({
+        date: d.toISOString().split('T')[0],
+        value: val,
+        month: months[d.getMonth()],
+        week: weekNum,
+        day: dayNum
+      });
+    }
+    return data;
+  })();
+
+  const activeDays = heatmapData.filter(d => d.value > 0).length;
+  const maxStreak = (() => {
+    let max = 0, cur = 0;
+    heatmapData.forEach(d => {
+      if (d.value > 0) { cur++; max = Math.max(max, cur); }
+      else cur = 0;
+    });
+    return max;
+  })();
+
+  const monthLabels = (() => {
+    const labels: { month: string, week: number }[] = [];
+    let lastMonth = '';
+    heatmapData.forEach(d => {
+      if (d.month !== lastMonth) {
+        labels.push({ month: d.month, week: d.week });
+        lastMonth = d.month;
+      }
+    });
+    return labels;
+  })();
 
   return (
     <div className="pt-32 px-6 pb-20 min-h-screen relative font-sans">
@@ -2321,30 +2394,60 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
             </div>
 
             <div className="card-lumina p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">Neural Consistency</h3>
-                <div className="flex gap-1">
-                  {[0.2, 0.4, 0.6, 0.8, 1].map((op, i) => (
-                    <div key={i} className="w-2 h-2 rounded-sm" style={{ backgroundColor: `rgba(212, 255, 0, ${op})` }} />
-                  ))}
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-bold text-lumina-text">
+                    {heatmapData.filter(d => d.value > 0).length} sessions in the last year
+                  </h3>
+                </div>
+                <div className="flex items-center gap-6 text-[10px] font-bold text-lumina-text/40 uppercase tracking-widest">
+                  <span>Active days: <span className="text-lumina-text">{activeDays}</span></span>
+                  <span>Max streak: <span className="text-lumina-accent">{maxStreak}</span></span>
                 </div>
               </div>
-              <div className="grid grid-cols-52 grid-rows-7 gap-1 h-24">
-                {heatmapData.map((d) => (
-                  <div 
-                    key={d.date} 
-                    className={`rounded-[1px] transition-colors ${
-                      d.value === 0 ? 'bg-white/5' :
-                      d.value === 1 ? 'bg-lumina-accent/20' :
-                      d.value === 2 ? 'bg-lumina-accent/40' :
-                      d.value === 3 ? 'bg-lumina-accent/70' : 'bg-lumina-accent'
-                    }`}
-                  />
-                ))}
+              
+              <div className="overflow-x-auto custom-scrollbar pb-2">
+                <div className="min-w-[700px]">
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(53, 1fr)`, gridTemplateRows: 'repeat(7, 1fr)', gap: '3px' }}>
+                    {Array.from({ length: 53 * 7 }).map((_, idx) => {
+                      const week = Math.floor(idx / 7);
+                      const day = idx % 7;
+                      const dataPoint = heatmapData.find(d => d.week === week && d.day === day);
+                      const val = dataPoint?.value || 0;
+                      return (
+                        <div 
+                          key={idx}
+                          className={`aspect-square rounded-[2px] transition-colors ${
+                            val === 0 ? 'bg-white/[0.04]' :
+                            val === 1 ? 'bg-lumina-accent/20' :
+                            val === 2 ? 'bg-lumina-accent/40' :
+                            val === 3 ? 'bg-lumina-accent/70' : 'bg-lumina-accent'
+                          }`}
+                          style={{ minWidth: '10px', minHeight: '10px' }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="flex mt-2" style={{ paddingLeft: '0' }}>
+                    {monthLabels.map((m, i) => (
+                      <span 
+                        key={i} 
+                        className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest"
+                        style={{ position: 'relative', left: `${(m.week / 53) * 100}%`, width: 0, whiteSpace: 'nowrap' }}
+                      >
+                        {m.month}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between mt-4 text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">
-                <span>Past 365 Days</span>
-                <span>{heatmapData.filter(d => d.value > 0).length} Active Sessions</span>
+              
+              <div className="flex items-center justify-end gap-2 mt-3">
+                <span className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">Less</span>
+                {[0.04, 0.2, 0.4, 0.7, 1].map((op, i) => (
+                  <div key={i} className="w-[10px] h-[10px] rounded-[2px]" style={{ backgroundColor: i === 0 ? 'rgba(255,255,255,0.04)' : `rgba(212, 255, 0, ${op})` }} />
+                ))}
+                <span className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">More</span>
               </div>
             </div>
           </div>
@@ -2359,14 +2462,17 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { rank: 'Iron', minXp: 0, icon: <Shield size={20} className="text-gray-500" />, color: 'from-gray-500 to-gray-600' },
-                  { rank: 'Bronze', minXp: 500, icon: <Shield size={20} className="text-amber-600" />, color: 'from-amber-600 to-orange-700' },
-                  { rank: 'Silver', minXp: 1200, icon: <Shield size={20} className="text-gray-300" />, color: 'from-gray-300 to-gray-400' },
-                  { rank: 'Gold', minXp: 2200, icon: <Medal size={20} className="text-yellow-400" />, color: 'from-yellow-400 to-orange-400' },
-                  { rank: 'Platinum', minXp: 3500, icon: <Trophy size={20} className="text-blue-300" />, color: 'from-blue-300 to-indigo-400' },
-                  { rank: 'Diamond', minXp: 5200, icon: <Gem size={20} className="text-cyan-300" />, color: 'from-cyan-300 to-blue-400' },
-                  { rank: 'Ascendant', minXp: 7500, icon: <Sparkles size={20} className="text-green-400" />, color: 'from-green-400 to-emerald-500' },
-                  { rank: 'Radiant', minXp: 14000, icon: <Crown size={20} className="text-yellow-300" />, color: 'from-yellow-300 to-amber-500' },
+                  { rank: 'Novice', minXp: 0, icon: <Shield size={20} className="text-gray-500" />, color: 'from-gray-500 to-gray-600' },
+                  { rank: 'Apprentice', minXp: 200, icon: <Shield size={20} className="text-amber-600" />, color: 'from-amber-600 to-orange-700' },
+                  { rank: 'Scholar', minXp: 500, icon: <BookOpen size={20} className="text-gray-300" />, color: 'from-gray-300 to-gray-500' },
+                  { rank: 'Adept', minXp: 1000, icon: <Shield size={20} className="text-yellow-400" />, color: 'from-yellow-400 to-orange-500' },
+                  { rank: 'Sage', minXp: 2000, icon: <Medal size={20} className="text-green-400" />, color: 'from-green-400 to-emerald-600' },
+                  { rank: 'Virtuoso', minXp: 4000, icon: <Trophy size={20} className="text-blue-300" />, color: 'from-blue-300 to-indigo-500' },
+                  { rank: 'Luminary', minXp: 7000, icon: <Sparkles size={20} className="text-amber-300" />, color: 'from-amber-300 to-yellow-500' },
+                  { rank: 'Archon', minXp: 12000, icon: <Star size={20} className="text-cyan-300" />, color: 'from-cyan-300 to-blue-500' },
+                  { rank: 'Transcendent', minXp: 20000, icon: <Gem size={20} className="text-red-400" />, color: 'from-red-400 to-rose-600' },
+                  { rank: 'Omniscient', minXp: 35000, icon: <Sparkles size={20} className="text-purple-300" />, color: 'from-purple-300 to-violet-500' },
+                  { rank: 'Eternal', minXp: 60000, icon: <Crown size={20} className="text-yellow-200" />, color: 'from-yellow-200 via-amber-400 to-orange-500' },
                 ].map((r) => {
                   const isUnlocked = user.xp >= r.minXp;
                   const isCurrent = user.rank.toLowerCase().includes(r.rank.toLowerCase());
@@ -2430,32 +2536,123 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
   );
 };
 
-const NotificationsView = ({ notifications }: { notifications: Notification[] }) => {
-  const engagementMessages = [
-    { emoji: '🧠', title: 'Memory Fade Alert!', message: 'Your Quantum Physics chapter is slipping away! Review now before it vanishes from your neural pathways!', type: 'reminder' as const },
-    { emoji: '🔥', title: 'Streak on Fire!', message: 'You\'re on a roll! Keep the momentum going - your brain is in peak learning mode right now!', type: 'achievement' as const },
-    { emoji: '🌟', title: 'New Milestone Unlocked!', message: 'Congratulations! You\'ve mastered 5 chapters this week. That\'s legendary progress!', type: 'achievement' as const },
-    { emoji: '⏰', title: 'Time to MemorEase!', message: 'Your Biology notes are about to fade from memory. A quick 10-min review will lock them in for another week!', type: 'reminder' as const },
-    { emoji: '🎯', title: 'Daily Goal Reminder', message: 'You\'re 1 session away from completing today\'s focus goal. Let\'s crush it!', type: 'system' as const },
-    { emoji: '💪', title: 'Level Up Incoming!', message: 'Just 50 more XP to reach the next level! One quick focus session will get you there!', type: 'achievement' as const },
-    { emoji: '📚', title: 'Knowledge Decay Warning', message: 'Your Chemistry formulas haven\'t been reviewed in 5 days. They\'re fading fast - MemorEase them now!', type: 'reminder' as const },
-    { emoji: '🏆', title: 'Weekly Champion!', message: 'You studied more than 90% of users this week! Keep up the incredible work, champion!', type: 'achievement' as const },
-    { emoji: '🌊', title: 'Focus Wave Available', message: 'Your brain\'s peak focus window is NOW based on your study patterns. Start a deep work session!', type: 'system' as const },
-    { emoji: '🎓', title: 'Mastery Achievement!', message: 'You\'ve reached 100% mastery on Neural Architecture! Your knowledge is now deeply embedded!', type: 'achievement' as const },
-  ];
+const NotificationsView = ({ notifications, subjects, user }: { notifications: Notification[], subjects: Subject[], user: UserProfile }) => {
+  const generateDynamicNotifications = () => {
+    const dynamic: { id: string, uid: string, title: string, message: string, time: string, type: 'reminder' | 'achievement' | 'system', isRead: boolean }[] = [];
+    
+    const allTopics = subjects.flatMap(s => s.topics);
+    
+    allTopics.forEach((topic, i) => {
+      if (topic.progress < 100 && topic.lastReviewed !== 'Never') {
+        dynamic.push({
+          id: `decay-${topic.id}`,
+          uid: user.uid,
+          title: `${topic.name} is fading!`,
+          message: `Your "${topic.name}" chapter is slipping away from memory! A quick review session now will lock it in. Don't let your progress decay!`,
+          time: 'Now',
+          type: 'reminder',
+          isRead: false
+        });
+      }
+    });
 
-  const allNotifications = [
-    ...notifications,
-    ...engagementMessages.map((m, i) => ({
-      id: `eng-${i}`,
-      uid: '',
-      title: m.title,
-      message: m.message,
-      time: ['Just now', '2m ago', '15m ago', '1h ago', '3h ago', 'Today', 'Yesterday', '2d ago', '3d ago', 'Last week'][i],
-      type: m.type,
-      isRead: i > 3,
-    }))
-  ];
+    if (user.streak >= 3) {
+      dynamic.push({
+        id: 'streak-fire',
+        uid: user.uid,
+        title: `${user.streak}-Day Streak!`,
+        message: `You're absolutely crushing it! ${user.streak} days of consistent learning. Your brain is building powerful neural pathways right now!`,
+        time: 'Today',
+        type: 'achievement',
+        isRead: false
+      });
+    }
+
+    if (user.streak === 0) {
+      dynamic.push({
+        id: 'streak-broken',
+        uid: user.uid,
+        title: 'Your streak needs attention!',
+        message: 'Start a focus session today to rebuild your streak. Even 15 minutes can make a huge difference in retention!',
+        time: 'Today',
+        type: 'reminder',
+        isRead: false
+      });
+    }
+
+    const nextRankXp = [200, 500, 1000, 2000, 4000, 7000, 12000, 20000, 35000, 60000].find(x => x > user.xp);
+    if (nextRankXp) {
+      const remaining = nextRankXp - user.xp;
+      if (remaining < 300) {
+        dynamic.push({
+          id: 'rank-close',
+          uid: user.uid,
+          title: 'Rank Up Incoming!',
+          message: `Only ${remaining} XP away from your next rank! One solid focus session could get you there!`,
+          time: 'Now',
+          type: 'achievement',
+          isRead: false
+        });
+      }
+    }
+
+    if (allTopics.length > 0) {
+      const lowProgress = allTopics.filter(t => t.progress < 50 && t.progress > 0);
+      lowProgress.slice(0, 2).forEach(topic => {
+        dynamic.push({
+          id: `low-${topic.id}`,
+          uid: user.uid,
+          title: `MemorEase "${topic.name}" now!`,
+          message: `This chapter is at only ${topic.progress}% mastery. The forgetting curve is working against you - review it before it drops further!`,
+          time: '1h ago',
+          type: 'reminder',
+          isRead: true
+        });
+      });
+    }
+
+    if (user.level >= 5) {
+      dynamic.push({
+        id: 'level-milestone',
+        uid: user.uid,
+        title: `Level ${user.level} Achieved!`,
+        message: `Incredible progress! You've reached Level ${user.level}. Your dedication to learning is truly inspiring!`,
+        time: 'Recent',
+        type: 'achievement',
+        isRead: true
+      });
+    }
+
+    if (subjects.length > 0) {
+      dynamic.push({
+        id: 'daily-goal',
+        uid: user.uid,
+        title: 'Daily Focus Goal',
+        message: `You have ${allTopics.filter(t => t.progress < 100).length} chapters still in progress. Try to complete at least one review session today!`,
+        time: 'Morning',
+        type: 'system',
+        isRead: true
+      });
+    }
+
+    const completedTopics = allTopics.filter(t => t.progress === 100);
+    if (completedTopics.length > 0) {
+      dynamic.push({
+        id: 'mastery-celebrate',
+        uid: user.uid,
+        title: `${completedTopics.length} Chapters Mastered!`,
+        message: `You've fully mastered ${completedTopics.length} chapter${completedTopics.length > 1 ? 's' : ''}! Knowledge deeply encoded in your neural pathways!`,
+        time: 'This week',
+        type: 'achievement',
+        isRead: true
+      });
+    }
+
+    return dynamic;
+  };
+
+  const dynamicNotifs = generateDynamicNotifications();
+  const allNotifications = [...notifications, ...dynamicNotifs];
 
   const markAllRead = async () => {
     try {
@@ -2472,7 +2669,7 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
   };
 
   const deleteNotification = async (id: string) => {
-    if (id.startsWith('eng-')) return;
+    if (id.startsWith('decay-') || id.startsWith('streak-') || id.startsWith('rank-') || id.startsWith('low-') || id.startsWith('level-') || id.startsWith('daily-') || id.startsWith('mastery-')) return;
     try {
       await supabase.from('notifications').delete().eq('id', id);
     } catch (error) {
@@ -2480,11 +2677,18 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
     }
   };
 
-  const getNotifIcon = (type: string, emoji?: string) => {
-    if (emoji) return <span className="text-2xl">{emoji}</span>;
-    if (type === 'reminder') return <Clock size={20} />;
-    if (type === 'achievement') return <Award size={20} />;
-    return <Zap size={20} />;
+  const getNotifEmoji = (type: string, title: string) => {
+    const t = title.toLowerCase();
+    if (t.includes('fading') || t.includes('fade') || t.includes('decay') || t.includes('memorease')) return '🧠';
+    if (t.includes('streak') && !t.includes('attention')) return '🔥';
+    if (t.includes('streak') && t.includes('attention')) return '⚡';
+    if (t.includes('rank')) return '🏅';
+    if (t.includes('level')) return '⭐';
+    if (t.includes('mastered') || t.includes('milestone')) return '🏆';
+    if (t.includes('daily') || t.includes('goal')) return '🎯';
+    if (type === 'reminder') return '📚';
+    if (type === 'achievement') return '🌟';
+    return '⚡';
   };
 
   const getNotifBg = (type: string) => {
@@ -2517,7 +2721,6 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
         <div className="space-y-4">
           {allNotifications.length > 0 ? (
             allNotifications.map((n, i) => {
-              const engMsg = engagementMessages.find(e => e.title === n.title);
               return (
                 <motion.div
                   key={n.id}
@@ -2528,7 +2731,7 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
                   className={`card-lumina p-6 flex items-start gap-6 relative group transition-all ${!n.isRead ? 'border-lumina-accent/50' : ''}`}
                 >
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${getNotifBg(n.type)}`}>
-                    {getNotifIcon(n.type, engMsg?.emoji)}
+                    <span className="text-2xl">{getNotifEmoji(n.type, n.title)}</span>
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-2">
@@ -2849,32 +3052,18 @@ const SocraticInterrogation = ({ topic, onClose, onComplete }: { topic: Topic, o
 
 // --- Main App ---
 
-const getValorantRank = (xp: number) => {
-  if (xp < 100) return 'Iron 1';
-  if (xp < 200) return 'Iron 2';
-  if (xp < 300) return 'Iron 3';
-  if (xp < 500) return 'Bronze 1';
-  if (xp < 700) return 'Bronze 2';
-  if (xp < 900) return 'Bronze 3';
-  if (xp < 1200) return 'Silver 1';
-  if (xp < 1500) return 'Silver 2';
-  if (xp < 1800) return 'Silver 3';
-  if (xp < 2200) return 'Gold 1';
-  if (xp < 2600) return 'Gold 2';
-  if (xp < 3000) return 'Gold 3';
-  if (xp < 3500) return 'Platinum 1';
-  if (xp < 4000) return 'Platinum 2';
-  if (xp < 4500) return 'Platinum 3';
-  if (xp < 5200) return 'Diamond 1';
-  if (xp < 5900) return 'Diamond 2';
-  if (xp < 6600) return 'Diamond 3';
-  if (xp < 7500) return 'Ascendant 1';
-  if (xp < 8400) return 'Ascendant 2';
-  if (xp < 9300) return 'Ascendant 3';
-  if (xp < 10500) return 'Immortal 1';
-  if (xp < 12000) return 'Immortal 2';
-  if (xp < 14000) return 'Immortal 3';
-  return 'Radiant';
+const getMemorEaseRank = (xp: number) => {
+  if (xp < 200) return 'Novice';
+  if (xp < 500) return 'Apprentice';
+  if (xp < 1000) return 'Scholar';
+  if (xp < 2000) return 'Adept';
+  if (xp < 4000) return 'Sage';
+  if (xp < 7000) return 'Virtuoso';
+  if (xp < 12000) return 'Luminary';
+  if (xp < 20000) return 'Archon';
+  if (xp < 35000) return 'Transcendent';
+  if (xp < 60000) return 'Omniscient';
+  return 'Eternal';
 };
 
 export default function App() {
@@ -2924,7 +3113,7 @@ export default function App() {
       if (userDoc) {
         const profile = userDoc as UserProfile;
         // Update rank based on XP if it's the old system
-        const newRank = getValorantRank(profile.xp);
+        const newRank = getMemorEaseRank(profile.xp);
         if (profile.rank !== newRank) {
           await supabase.from('users').update({ rank: newRank }).eq('uid', profile.uid);
           profile.rank = newRank;
@@ -2936,7 +3125,7 @@ export default function App() {
           uid: supabaseUser.id,
           name: supabaseUser.user_metadata?.full_name || 'New Scholar',
           avatar: supabaseUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${supabaseUser.id}`,
-          rank: getValorantRank(0),
+          rank: getMemorEaseRank(0),
           level: 1,
           xp: 0,
           streak: 0,
@@ -3089,7 +3278,7 @@ export default function App() {
 
         const newXp = user.xp + xpGain;
         const newLevel = Math.floor(newXp / 200) + 1;
-        const newRank = getValorantRank(newXp);
+        const newRank = getMemorEaseRank(newXp);
 
         await supabase
           .from('users')
@@ -3261,7 +3450,7 @@ export default function App() {
           )}
           {user && view === 'notifications' && (
             <motion.div key="notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <NotificationsView notifications={notifications} />
+              <NotificationsView notifications={notifications} subjects={subjects} user={user} />
             </motion.div>
           )}
         </AnimatePresence>
