@@ -2583,8 +2583,19 @@ export default function App() {
   // Auth Listener
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      handleSession(session);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("Session error:", error.message);
+          if (error.message.includes('Refresh Token Not Found') || error.message.includes('Invalid Refresh Token')) {
+             await supabase.auth.signOut();
+          }
+        }
+        handleSession(session);
+      } catch (err) {
+        console.error("Unexpected error during getSession:", err);
+        handleSession(null);
+      }
     };
 
     checkUser();
