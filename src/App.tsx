@@ -45,31 +45,10 @@ import {
   Download,
   Eye,
   EyeOff,
-  Settings,
-  Sliders,
-  Crown,
   Shield,
-  Swords,
   Gem,
-  Sparkles,
-  Trophy,
-  Medal,
-  Heart,
-  Coffee,
-  Moon,
-  Sun,
-  CloudRain,
-  Music,
-  Headphones,
-  Gift,
-  PartyPopper,
-  TimerReset,
-  Siren,
-  Crosshair,
-  Clipboard,
-  Sword,
-  HeartPulse,
-  Users
+  Hexagon,
+  Crown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -90,7 +69,7 @@ import { GoogleGenAI } from "@google/genai";
 import { supabase } from './supabaseClient';
 
 // --- Types ---
-type View = 'auth' | 'overview' | 'focus' | 'vault' | 'profile' | 'notifications' | 'battle';
+type View = 'auth' | 'overview' | 'focus' | 'vault' | 'profile' | 'notifications';
 type AuthMode = 'landing' | 'login' | 'signup' | 'forgot';
 
 interface Topic {
@@ -112,6 +91,7 @@ interface Subject {
   id: string;
   uid: string;
   name: string;
+  imageUrl?: string;
   topics: Topic[];
 }
 
@@ -137,6 +117,7 @@ interface Notification {
   time: string;
   type: 'reminder' | 'achievement' | 'system';
   isRead: boolean;
+  icon?: string;
 }
 
 interface PomodoroSettings {
@@ -269,7 +250,6 @@ const Navbar = ({ currentView, setView, unreadCount, onLogout }: { currentView: 
           <NavLink active={currentView === 'overview'} onClick={() => setView('overview')} icon={<LayoutDashboard size={16} />} label="Metrics" />
           <NavLink active={currentView === 'focus'} onClick={() => setView('focus')} icon={<Timer size={16} />} label="Focus" />
           <NavLink active={currentView === 'vault'} onClick={() => setView('vault')} icon={<Database size={16} />} label="Vault" />
-          <NavLink active={currentView === 'battle'} onClick={() => setView('battle')} icon={<Sword size={16} />} label="Arena" />
           <NavLink active={currentView === 'profile'} onClick={() => setView('profile')} icon={<User size={16} />} label="Profile" />
         </div>
       </div>
@@ -325,11 +305,11 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -458,7 +438,6 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
             <button 
               onClick={() => setMode('signup')}
-              data-testid="get-started-btn"
               className="btn-primary px-10 py-4 text-base"
             >
               Get Started Free
@@ -473,7 +452,7 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
               { title: 'Deep Focus Mode', desc: 'Eliminate distractions with our proprietary hardcore focus protocols.', icon: <Timer className="text-lumina-accent" />, col: 'md:col-span-1' },
               { title: 'Neural Mapping', desc: 'Visualize connections between concepts with interactive knowledge graphs.', icon: <Brain className="text-lumina-accent" />, col: 'md:col-span-1' },
               { title: 'Secure Vault', desc: 'Your intellectual assets are encrypted and stored in a high-performance database.', icon: <Database className="text-lumina-accent" />, col: 'md:col-span-2' },
-              { title: 'Smart Progress', desc: 'Track your mastery journey with intelligent analytics and insights.', icon: <TrendingUp className="text-lumina-accent" />, col: 'md:col-span-1' }
+              { title: 'Global Rankings', desc: 'Compete with scholars worldwide and climb the neural leaderboard.', icon: <Award className="text-lumina-accent" />, col: 'md:col-span-1' }
             ].map((f, i) => (
               <motion.div 
                 key={i} 
@@ -623,19 +602,17 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                         <input 
                           type={showPassword ? "text" : "password"} 
                           placeholder="••••••••" 
-                          className="input-lumina pr-12" 
+                          className="input-lumina w-full pr-10" 
                           required 
-                          data-testid="login-password-input"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                         />
                         <button 
-                          type="button"
-                          data-testid="login-toggle-password"
+                          type="button" 
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-lumina-text/30 hover:text-lumina-accent transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-lumina-text/40 hover:text-lumina-text transition-colors"
                         >
-                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                     </div>
@@ -647,7 +624,7 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                       <div className="text-red-500 text-xs font-bold text-center mt-2">{error}</div>
                     )}
 
-                    <button type="submit" disabled={loading} data-testid="login-submit-btn" className="btn-primary w-full py-4 mt-4 disabled:opacity-50">
+                    <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-4 disabled:opacity-50">
                       {loading ? 'Authenticating...' : 'Login to System'}
                     </button>
                     
@@ -714,19 +691,17 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                         <input 
                           type={showPassword ? "text" : "password"} 
                           placeholder="••••••••" 
-                          className="input-lumina pr-12" 
+                          className="input-lumina w-full pr-10" 
                           required 
-                          data-testid="signup-password-input"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                         />
                         <button 
-                          type="button"
-                          data-testid="signup-toggle-password"
+                          type="button" 
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-lumina-text/30 hover:text-lumina-accent transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-lumina-text/40 hover:text-lumina-text transition-colors"
                         >
-                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                     </div>
@@ -735,7 +710,7 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                       <div className="text-red-500 text-xs font-bold text-center mt-2">{error}</div>
                     )}
 
-                    <button type="submit" disabled={loading} data-testid="signup-submit-btn" className="btn-primary w-full py-4 mt-4 disabled:opacity-50">
+                    <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-4 disabled:opacity-50">
                       {loading ? 'Initializing...' : 'Initialize Profile'}
                     </button>
 
@@ -791,133 +766,6 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
   );
 };
 
-const SUBJECT_IMAGES: Record<string, string> = {
-  'Mathematics': 'https://images.unsplash.com/photo-1635372722656-389f87a941b7?auto=format&fit=crop&q=80&w=1000',
-  'Physics': 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?auto=format&fit=crop&q=80&w=1000',
-  'Chemistry': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=1000',
-  'Biology': 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?auto=format&fit=crop&q=80&w=1000',
-  'Computer Science': 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=1000',
-  'History': 'https://images.unsplash.com/photo-1461360370896-922624d12a74?auto=format&fit=crop&q=80&w=1000',
-  'English': 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=1000',
-  'Geography': 'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1000',
-  'Psychology': 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&q=80&w=1000',
-  'Economics': 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&q=80&w=1000',
-  'default': 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1000',
-};
-
-const getSubjectImage = (name: string): string => {
-  for (const key of Object.keys(SUBJECT_IMAGES)) {
-    if (name.toLowerCase().includes(key.toLowerCase())) return SUBJECT_IMAGES[key];
-  }
-  const keys = Object.keys(SUBJECT_IMAGES).filter(k => k !== 'default');
-  const hash = name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  return keys[hash % keys.length] ? SUBJECT_IMAGES[keys[hash % keys.length]] : SUBJECT_IMAGES['default'];
-};
-
-const getRankIcon = (rank: string) => {
-  const r = rank.toLowerCase();
-  if (r.includes('eternal')) return <Crown size={16} className="text-yellow-200" />;
-  if (r.includes('omniscient')) return <Sparkles size={16} className="text-purple-300" />;
-  if (r.includes('transcendent')) return <Gem size={16} className="text-red-400" />;
-  if (r.includes('archon')) return <Star size={16} className="text-cyan-300" />;
-  if (r.includes('luminary')) return <Sparkles size={16} className="text-amber-300" />;
-  if (r.includes('virtuoso')) return <Trophy size={16} className="text-blue-300" />;
-  if (r.includes('sage')) return <Medal size={16} className="text-green-400" />;
-  if (r.includes('adept')) return <Shield size={16} className="text-yellow-400" />;
-  if (r.includes('scholar')) return <BookOpen size={16} className="text-gray-300" />;
-  if (r.includes('apprentice')) return <Shield size={16} className="text-amber-600" />;
-  return <Shield size={16} className="text-gray-500" />;
-};
-
-const getRankColor = (rank: string) => {
-  const r = rank.toLowerCase();
-  if (r.includes('eternal')) return 'from-yellow-200 via-amber-400 to-orange-500';
-  if (r.includes('omniscient')) return 'from-purple-300 to-violet-500';
-  if (r.includes('transcendent')) return 'from-red-400 to-rose-600';
-  if (r.includes('archon')) return 'from-cyan-300 to-blue-500';
-  if (r.includes('luminary')) return 'from-amber-300 to-yellow-500';
-  if (r.includes('virtuoso')) return 'from-blue-300 to-indigo-500';
-  if (r.includes('sage')) return 'from-green-400 to-emerald-600';
-  if (r.includes('adept')) return 'from-yellow-400 to-orange-500';
-  if (r.includes('scholar')) return 'from-gray-300 to-gray-500';
-  if (r.includes('apprentice')) return 'from-amber-600 to-orange-700';
-  return 'from-gray-500 to-gray-600';
-};
-
-// ========================================
-// ACTIVITY HEATMAP (LeetCode-style)
-// ========================================
-const ActivityHeatmap = () => {
-  const heatmapData = React.useMemo(() => {
-    const data: { date: string, value: number, month: string, week: number, day: number }[] = [];
-    const now = new Date();
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    for (let i = 364; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const weekNum = Math.floor((364 - i) / 7);
-      const dayNum = d.getDay();
-      const isRecent = i < 120;
-      const val = isRecent ? Math.floor(Math.random() * 5) : (Math.random() > 0.7 ? Math.floor(Math.random() * 3) : 0);
-      data.push({ date: d.toISOString().split('T')[0], value: val, month: months[d.getMonth()], week: weekNum, day: dayNum });
-    }
-    return data;
-  }, []);
-
-  const activeDays = heatmapData.filter(d => d.value > 0).length;
-  const maxStreak = (() => {
-    let max = 0, cur = 0;
-    heatmapData.forEach(d => { if (d.value > 0) { cur++; max = Math.max(max, cur); } else cur = 0; });
-    return max;
-  })();
-
-  const monthLabels = (() => {
-    const labels: { month: string, week: number }[] = [];
-    let lastMonth = '';
-    heatmapData.forEach(d => { if (d.month !== lastMonth) { labels.push({ month: d.month, week: d.week }); lastMonth = d.month; } });
-    return labels;
-  })();
-
-  return (
-    <div className="card-lumina p-6" data-testid="activity-heatmap">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <h3 className="text-sm font-bold text-lumina-text">{activeDays} sessions in the last year</h3>
-        <div className="flex items-center gap-6 text-[10px] font-bold text-lumina-text/40 uppercase tracking-widest">
-          <span>Active days: <span className="text-lumina-text">{activeDays}</span></span>
-          <span>Max streak: <span className="text-lumina-accent">{maxStreak}</span></span>
-        </div>
-      </div>
-      <div className="overflow-x-auto custom-scrollbar pb-2">
-        <div className="min-w-[700px]">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(53, 1fr)', gridTemplateRows: 'repeat(7, 1fr)', gap: '3px' }}>
-            {Array.from({ length: 53 * 7 }).map((_, idx) => {
-              const week = Math.floor(idx / 7);
-              const day = idx % 7;
-              const dp = heatmapData.find(d => d.week === week && d.day === day);
-              const val = dp?.value || 0;
-              return (
-                <div key={idx} className={`aspect-square rounded-[2px] ${val === 0 ? 'bg-white/[0.04]' : val === 1 ? 'bg-lumina-accent/20' : val === 2 ? 'bg-lumina-accent/40' : val === 3 ? 'bg-lumina-accent/70' : 'bg-lumina-accent'}`} style={{ minWidth: '10px', minHeight: '10px' }} />
-              );
-            })}
-          </div>
-          <div className="flex mt-2">
-            {monthLabels.map((m, i) => (
-              <span key={i} className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest" style={{ position: 'relative', left: `${(m.week / 53) * 100}%`, width: 0, whiteSpace: 'nowrap' }}>{m.month}</span>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center justify-end gap-2 mt-3">
-        <span className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">Less</span>
-        {[0.04, 0.2, 0.4, 0.7, 1].map((op, i) => (
-          <div key={i} className="w-[10px] h-[10px] rounded-[2px]" style={{ backgroundColor: i === 0 ? 'rgba(255,255,255,0.04)' : `rgba(212, 255, 0, ${op})` }} />
-        ))}
-        <span className="text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">More</span>
-      </div>
-    </div>
-  );
-};
-
 const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (topic: Topic) => void, user: UserProfile, subjects: Subject[], noteCount: number }) => {
   const allTopics = subjects.flatMap(s => s.topics);
   const currentTopic = allTopics.find(t => t.progress < 100) || allTopics[0] || {
@@ -934,6 +782,26 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (
     masteryLevel: 4,
     assets: []
   };
+
+  const retentionData = [
+    { day: 0, retention: 100 },
+    { day: 1, retention: 85 },
+    { day: 3, retention: 72 },
+    { day: 7, retention: 64 },
+    { day: 14, retention: 58 },
+    { day: 30, retention: 52 },
+  ];
+
+  const focusData = subjects.map(subject => {
+    const value = subject.topics.reduce((acc, topic) => acc + (topic.progress * topic.chapters), 0);
+    return { name: subject.name, value: value > 0 ? value : 10 };
+  }).filter(d => d.value > 0).slice(0, 5);
+
+  if (focusData.length === 0) {
+    focusData.push({ name: 'Empty Repository', value: 100 });
+  }
+
+  const COLORS = ['#d4ff00', '#ffffff', '#333333', '#666666'];
 
   return (
     <div className="pt-32 px-6 pb-20 min-h-screen relative font-sans">
@@ -1020,32 +888,72 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (
             </div>
           </div>
 
-          {/* Neural Load - Medium Card */}
-          <div className="md:col-span-4 card-lumina flex flex-col">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold">Retention Curve</h3>
-              <TrendingUp size={18} className="text-lumina-accent" />
+          {/* Analytics Row */}
+          <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="card-lumina p-8">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">Retention Curve</h3>
+                <TrendingUp size={16} className="text-lumina-accent" />
+              </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={retentionData}>
+                    <defs>
+                      <linearGradient id="colorRetention" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#d4ff00" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#d4ff00" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="day" hide />
+                    <YAxis hide domain={[0, 100]} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '12px', fontSize: '10px' }}
+                      itemStyle={{ color: '#d4ff00' }}
+                    />
+                    <Area type="monotone" dataKey="retention" stroke="#d4ff00" strokeWidth={3} fillOpacity={1} fill="url(#colorRetention)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-[10px] text-lumina-text/30 mt-6 leading-relaxed uppercase tracking-widest text-center">
+                Spaced repetition algorithms optimizing for 85% threshold.
+              </p>
             </div>
-            <div className="flex-1 min-h-[150px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={[
-                  { day: 'D1', retention: 95 }, { day: 'D2', retention: 80 }, { day: 'D3', retention: 65 },
-                  { day: 'D5', retention: 55 }, { day: 'D7', retention: 50 }, { day: 'D14', retention: 45 },
-                  { day: 'D21', retention: 60 }, { day: 'D30', retention: 75 }, { day: 'D45', retention: 85 }
-                ]}>
-                  <defs>
-                    <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#d4ff00" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#d4ff00" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="retention" stroke="#d4ff00" fill="url(#colorVal)" strokeWidth={3} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-6 pt-6 border-t border-white/5 flex justify-between items-center">
-              <span className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">Optimizing for 85%</span>
-              <span className="text-sm font-bold text-lumina-accent">85%</span>
+
+            <div className="card-lumina p-8">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">Neural Load Distribution</h3>
+                <Zap size={16} className="text-lumina-accent" />
+              </div>
+              <div className="h-64 w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={focusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={8}
+                      dataKey="value"
+                    >
+                      {focusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '12px', fontSize: '10px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-wrap justify-center gap-4 mt-6">
+                {focusData.map((d, i) => (
+                  <div key={d.name} className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                    <span className="text-[8px] font-bold text-lumina-text/40 uppercase tracking-widest">{d.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -1062,118 +970,37 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (
 
           <div className="md:col-span-3 card-lumina flex flex-col justify-between">
             <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-              <Award size={20} className="text-lumina-accent" />
+              {getRankIcon(user.rank, 20)}
             </div>
             <div>
               <div className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-1">Neural Rank</div>
-              <div className="flex items-center gap-2">
-                {getRankIcon(user.rank)}
-                <span className={`text-lg font-display font-bold bg-gradient-to-r ${getRankColor(user.rank)} bg-clip-text text-transparent uppercase tracking-wider`}>{user.rank}</span>
-              </div>
+              <div className="text-xl font-display font-bold text-lumina-accent uppercase tracking-widest">{user.rank}</div>
             </div>
           </div>
 
-          <div className="md:col-span-3 card-lumina flex flex-col justify-between">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-              <Zap size={20} className="text-lumina-accent" />
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-1">Total XP</div>
-              <div className="text-3xl font-display font-bold text-lumina-accent">{user.xp.toLocaleString()}</div>
-            </div>
-          </div>
-
-          {/* Neural Load Distribution - Wide Card */}
+          {/* Recent Subjects - Wide Card */}
           <div className="md:col-span-6 card-lumina">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold">Study Load Distribution</h3>
-              <Zap size={18} className="text-lumina-accent" />
+              <h3 className="text-lg font-bold">Neural Subjects</h3>
+              <button className="text-[10px] font-bold text-lumina-accent uppercase tracking-widest hover:underline">View All</button>
             </div>
-            {subjects.length > 0 ? (
-              <>
-                <div className="h-56 w-full flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={subjects.map(s => ({ name: s.name, value: Math.max(s.topics.reduce((acc, t) => acc + t.chapters, 0), 1) }))}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        labelLine={false}
-                      >
-                        {subjects.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={['#d4ff00', '#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#fb923c', '#22d3ee'][index % 8]} stroke="none" />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+            <div className="space-y-4">
+              {subjects.slice(0, 3).map((subject, idx) => (
+                <div key={subject.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group cursor-pointer">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-black font-bold ${
+                    idx === 0 ? 'bg-lumina-accent' : idx === 1 ? 'bg-lumina-secondary' : 'bg-white'
+                  }`}>
+                    {subject.name.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold mb-1">{subject.name}</div>
+                    <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest">{subject.topics.length} Active Modules</div>
+                  </div>
+                  <ChevronRight size={16} className="text-lumina-text/20 group-hover:text-lumina-accent transition-colors" />
                 </div>
-                <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4">
-                  {subjects.map((s, i) => (
-                    <div key={s.id} className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ['#d4ff00', '#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#fb923c', '#22d3ee'][i % 8] }} />
-                      <span className="text-[9px] font-bold text-lumina-text/50 uppercase tracking-widest">{s.name}</span>
-                      <span className="text-[9px] font-bold text-lumina-text/20">{s.topics.length} topics</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="h-56 flex flex-col items-center justify-center text-lumina-text/20">
-                <Database size={32} className="mb-3" />
-                <span className="text-xs font-bold uppercase tracking-widest">No subjects yet</span>
-                <span className="text-[10px] text-lumina-text/10 mt-1">Add subjects to see distribution</span>
-              </div>
-            )}
-          </div>
-
-          {/* Active Subjects - Wide Card */}
-          <div className="md:col-span-6 card-lumina">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold">Active Subjects</h3>
-              <span className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">{subjects.length} total</span>
+              ))}
             </div>
-            {subjects.length > 0 ? (
-              <div className="space-y-3">
-                {subjects.slice(0, 4).map((subject, idx) => {
-                  const totalProgress = subject.topics.length > 0 
-                    ? Math.round(subject.topics.reduce((acc, t) => acc + t.progress, 0) / subject.topics.length)
-                    : 0;
-                  return (
-                    <div key={subject.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group cursor-pointer">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
-                        <img src={getSubjectImage(subject.name)} alt={subject.name} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold mb-1 truncate">{subject.name}</div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                            <div className="h-full rounded-full bg-lumina-accent transition-all" style={{ width: `${totalProgress}%` }} />
-                          </div>
-                          <span className="text-[10px] font-bold text-lumina-text/40 shrink-0">{totalProgress}%</span>
-                        </div>
-                        <div className="text-[10px] text-lumina-text/30 uppercase tracking-widest mt-1">{subject.topics.length} modules</div>
-                      </div>
-                      <ChevronRight size={16} className="text-lumina-text/20 group-hover:text-lumina-accent transition-colors shrink-0" />
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="py-16 flex flex-col items-center justify-center text-lumina-text/20">
-                <BookOpen size={32} className="mb-3" />
-                <span className="text-xs font-bold uppercase tracking-widest">No subjects yet</span>
-                <span className="text-[10px] text-lumina-text/10 mt-1">Go to Vault to add subjects</span>
-              </div>
-            )}
           </div>
-
-          {/* Features removed from metrics - available as standalone components */}
         </div>
       </div>
     </div>
@@ -1189,12 +1016,7 @@ const FocusView = ({
   activeTopic: Topic | null, 
   onFinishTopic: (t: Topic) => void 
 }) => {
-  const [customWork, setCustomWork] = useState(settings.workTime);
-  const [customShort, setCustomShort] = useState(settings.shortBreak);
-  const [customLong, setCustomLong] = useState(settings.longBreak);
-  const [timerMode, setTimerMode] = useState<'pomodoro' | 'countdown' | 'stopwatch'>('pomodoro');
-  const [timeLeft, setTimeLeft] = useState(customWork * 60);
-  const [stopwatchTime, setStopwatchTime] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(settings.workTime * 60);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'work' | 'short' | 'long'>('work');
   const [phase, setPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
@@ -1202,92 +1024,35 @@ const FocusView = ({
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [hardcoreMode, setHardcoreMode] = useState(false);
   const [sessionFailed, setSessionFailed] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [pomodoroCount, setPomodoroCount] = useState(0);
-  const [sessionsBeforeLong, setSessionsBeforeLong] = useState(4);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const AMBIENCE_URLS: Record<string, string> = {
-    'Rain': 'https://cdn.pixabay.com/audio/2022/10/30/audio_a6a201c5ab.mp3',
-    'Lo-Fi': 'https://cdn.pixabay.com/audio/2024/11/05/audio_98bf0b00c7.mp3',
-    'Waves': 'https://cdn.pixabay.com/audio/2022/02/23/audio_ea70ad31a0.mp3',
-    'Forest': 'https://cdn.pixabay.com/audio/2022/08/31/audio_419263fc5b.mp3',
-    'Night': 'https://cdn.pixabay.com/audio/2024/09/26/audio_e2b1d20c1e.mp3',
-  };
-
-  useEffect(() => {
-    if (selectedMusic === 'None') {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      return;
-    }
-    
-    const url = AMBIENCE_URLS[selectedMusic];
-    if (!url) return;
-    
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    
-    const audio = new Audio(url);
-    audio.loop = true;
-    audio.volume = 0.4;
-    audio.play().catch(err => console.log('Audio autoplay blocked:', err));
-    audioRef.current = audio;
-    
-    return () => {
-      audio.pause();
-      audio.src = '';
-    };
-  }, [selectedMusic]);
 
   useEffect(() => {
     let timer: any;
-    if (timerMode === 'stopwatch') {
-      if (isActive) {
-        timer = setInterval(() => setStopwatchTime(t => t + 1), 1000);
-      }
-    } else {
-      if (isActive && timeLeft > 0) {
-        timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-      } else if (timeLeft === 0 && isActive) {
-        setIsActive(false);
-        if (timerMode === 'pomodoro' && mode === 'work') {
-          const newCount = pomodoroCount + 1;
-          setPomodoroCount(newCount);
-          if (newCount % sessionsBeforeLong === 0) {
-            setMode('long');
-            setTimeLeft(customLong * 60);
-          } else {
-            setMode('short');
-            setTimeLeft(customShort * 60);
-          }
-        } else if (timerMode === 'pomodoro' && (mode === 'short' || mode === 'long')) {
-          setMode('work');
-          setTimeLeft(customWork * 60);
-        }
-        if (mode === 'work') setShowFinishModal(true);
-      }
+    if (isActive && timeLeft > 0) {
+      timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+    } else if (timeLeft === 0) {
+      setIsActive(false);
+      if (mode === 'work') setShowFinishModal(true);
     }
     return () => clearInterval(timer);
-  }, [isActive, timeLeft, mode, timerMode, stopwatchTime, customWork, customShort, customLong, pomodoroCount, sessionsBeforeLong]);
+  }, [isActive, timeLeft, mode]);
 
   useEffect(() => {
     if (!isActive || !hardcoreMode) return;
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         setIsActive(false);
         setSessionFailed(true);
       }
     };
+
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
         setIsActive(false);
         setSessionFailed(true);
       }
     };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => {
@@ -1305,16 +1070,16 @@ const FocusView = ({
   }, [isActive]);
 
   const formatTime = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
+    const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    if (hrs > 0) return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const toggleTimer = () => {
     if (!isActive && hardcoreMode) {
-      document.documentElement.requestFullscreen().catch(() => {});
+      document.documentElement.requestFullscreen().catch(() => {
+        // Fallback for fullscreen error
+      });
     }
     setIsActive(!isActive);
   };
@@ -1322,77 +1087,57 @@ const FocusView = ({
   const resetTimer = (newMode: 'work' | 'short' | 'long') => {
     setMode(newMode);
     setIsActive(false);
-    setTimeLeft((newMode === 'work' ? customWork : newMode === 'short' ? customShort : customLong) * 60);
+    setTimeLeft((newMode === 'work' ? settings.workTime : newMode === 'short' ? settings.shortBreak : settings.longBreak) * 60);
   };
-
-  const resetStopwatch = () => {
-    setIsActive(false);
-    setStopwatchTime(0);
-  };
-
-  const applyCustomTime = (mins: number) => {
-    setCustomWork(mins);
-    if (!isActive && mode === 'work') {
-      setTimeLeft(mins * 60);
-    }
-  };
-
-  const timePresets = [15, 25, 30, 45, 50, 60, 90, 120];
-
-  const totalTime = timerMode === 'stopwatch' ? 1 : (mode === 'work' ? customWork : mode === 'short' ? customShort : customLong) * 60;
-  const displayTime = timerMode === 'stopwatch' ? stopwatchTime : timeLeft;
-  const progress = timerMode === 'stopwatch' ? Math.min(stopwatchTime / 1500, 1) : (totalTime - timeLeft) / totalTime;
 
   return (
     <div className="pt-32 px-6 pb-20 min-h-screen relative font-sans overflow-hidden">
+      {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-lumina-accent/5 rounded-full blur-[120px] animate-pulse" />
       </div>
 
-      <div className="max-w-5xl mx-auto relative z-10">
-        <div className="flex flex-col items-center text-center mb-12">
+      <div className="max-w-4xl mx-auto relative z-10">
+        <div className="flex flex-col items-center text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-lumina-text/40 text-[10px] font-bold uppercase tracking-widest mb-6">
             <Brain size={12} />
             Deep Focus Protocol
           </div>
           <h1 className="text-5xl md:text-6xl font-display font-bold text-lumina-text tracking-tight mb-4">
-            {timerMode === 'stopwatch' ? 'Stopwatch' : mode === 'work' ? 'Deep Work' : mode === 'short' ? 'Short Rest' : 'Long Rest'}
+            {mode === 'work' ? 'Deep Work' : mode === 'short' ? 'Short Rest' : 'Long Rest'}
           </h1>
           {activeTopic && (
             <p className="text-lumina-accent font-bold uppercase tracking-[0.2em] text-xs">
               Focusing on: {activeTopic.name}
             </p>
           )}
-          {timerMode === 'pomodoro' && (
-            <div className="flex items-center gap-2 mt-3">
-              {Array.from({ length: sessionsBeforeLong }).map((_, i) => (
-                <div key={i} className={`w-3 h-3 rounded-full transition-all ${i < (pomodoroCount % sessionsBeforeLong) ? 'bg-lumina-accent shadow-[0_0_8px_rgba(212,255,0,0.5)]' : 'bg-white/10'}`} />
-              ))}
-              <span className="text-[10px] text-lumina-text/30 ml-2 uppercase tracking-widest">{pomodoroCount} sessions</span>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {/* Timer Section */}
           <div className="md:col-span-8 card-lumina flex flex-col items-center justify-center py-16 relative">
+            {/* Timer Ring */}
             <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center mb-12">
               <svg className="absolute inset-0 w-full h-full -rotate-90">
-                <circle cx="50%" cy="50%" r="48%" className="stroke-white/5 fill-none" strokeWidth="4" />
+                <circle 
+                  cx="50%" cy="50%" r="48%" 
+                  className="stroke-white/5 fill-none" 
+                  strokeWidth="4" 
+                />
                 <motion.circle 
                   cx="50%" cy="50%" r="48%" 
                   className="stroke-lumina-accent fill-none" 
                   strokeWidth="4"
                   strokeDasharray="100 100"
                   initial={{ strokeDashoffset: 100 }}
-                  animate={{ strokeDashoffset: 100 - progress * 100 }}
+                  animate={{ strokeDashoffset: 100 - (timeLeft / (settings.workTime * 60)) * 100 }}
                   transition={{ duration: 1, ease: "linear" }}
                 />
               </svg>
               <div className="text-7xl md:text-8xl font-display font-bold text-lumina-text tracking-tighter tabular-nums">
-                {formatTime(displayTime)}
+                {formatTime(timeLeft)}
               </div>
-              {isActive && timerMode !== 'stopwatch' && (
+              {isActive && (
                 <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -1406,7 +1151,6 @@ const FocusView = ({
             <div className="flex items-center gap-4">
               <button 
                 onClick={toggleTimer}
-                data-testid="focus-play-pause-btn"
                 className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
                   isActive 
                     ? 'bg-white/5 border border-white/10 text-lumina-text hover:bg-white/10' 
@@ -1416,8 +1160,7 @@ const FocusView = ({
                 {isActive ? <Pause size={32} fill="currentColor" /> : <Play size={32} className="ml-1" fill="currentColor" />}
               </button>
               <button 
-                onClick={() => timerMode === 'stopwatch' ? resetStopwatch() : resetTimer(mode)}
-                data-testid="focus-reset-btn"
+                onClick={() => resetTimer(mode)}
                 className="w-14 h-14 rounded-full bg-white/5 border border-white/10 text-lumina-text/40 flex items-center justify-center hover:bg-white/10 hover:text-lumina-text transition-all"
               >
                 <RotateCcw size={20} />
@@ -1425,7 +1168,6 @@ const FocusView = ({
               {activeTopic && (
                 <button 
                   onClick={() => setShowFinishModal(true)}
-                  data-testid="focus-finish-btn"
                   className="w-14 h-14 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-all"
                 >
                   <CheckCheck size={20} />
@@ -1436,138 +1178,24 @@ const FocusView = ({
 
           {/* Controls Section */}
           <div className="md:col-span-4 space-y-6">
-            {/* Timer Mode Selector */}
             <div className="card-lumina">
-              <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Timer Mode</h3>
+              <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Session Mode</h3>
               <div className="space-y-2">
-                {([
-                  { key: 'pomodoro' as const, label: 'Pomodoro', icon: <Timer size={14} /> },
-                  { key: 'countdown' as const, label: 'Countdown', icon: <Clock size={14} /> },
-                  { key: 'stopwatch' as const, label: 'Stopwatch', icon: <TimerReset size={14} /> },
-                ]).map((m) => (
+                {(['work', 'short', 'long'] as const).map((m) => (
                   <button
-                    key={m.key}
-                    onClick={() => {
-                      setTimerMode(m.key);
-                      setIsActive(false);
-                      if (m.key === 'stopwatch') setStopwatchTime(0);
-                      else setTimeLeft(customWork * 60);
-                      setMode('work');
-                    }}
-                    data-testid={`timer-mode-${m.key}`}
-                    className={`w-full py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all text-left flex items-center gap-3 ${
-                      timerMode === m.key 
+                    key={m}
+                    onClick={() => resetTimer(m)}
+                    className={`w-full py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all text-left flex items-center justify-between ${
+                      mode === m 
                         ? 'bg-lumina-accent text-black' 
                         : 'bg-white/5 text-lumina-text/40 hover:bg-white/10'
                     }`}
                   >
-                    {m.icon}
-                    {m.label}
-                    {timerMode === m.key && <div className="w-1.5 h-1.5 rounded-full bg-black ml-auto" />}
+                    {m === 'work' ? 'Deep Work' : m === 'short' ? 'Short Break' : 'Long Break'}
+                    {mode === m && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Session Mode (Pomodoro only) */}
-            {timerMode === 'pomodoro' && (
-              <div className="card-lumina">
-                <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Session Phase</h3>
-                <div className="space-y-2">
-                  {(['work', 'short', 'long'] as const).map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => resetTimer(m)}
-                      data-testid={`session-phase-${m}`}
-                      className={`w-full py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all text-left flex items-center justify-between ${
-                        mode === m 
-                          ? 'bg-lumina-accent text-black' 
-                          : 'bg-white/5 text-lumina-text/40 hover:bg-white/10'
-                      }`}
-                    >
-                      {m === 'work' ? 'Deep Work' : m === 'short' ? 'Short Break' : 'Long Break'}
-                      {mode === m && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Timer Customization */}
-            <div className="card-lumina">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">Customize Time</h3>
-                <button 
-                  onClick={() => setShowSettings(!showSettings)}
-                  data-testid="toggle-timer-settings"
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${showSettings ? 'bg-lumina-accent text-black' : 'bg-white/5 text-lumina-text/40 hover:bg-white/10'}`}
-                >
-                  <Sliders size={14} />
-                </button>
-              </div>
-              
-              {/* Quick Presets */}
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {timePresets.map(p => (
-                  <button
-                    key={p}
-                    onClick={() => applyCustomTime(p)}
-                    data-testid={`preset-${p}min`}
-                    className={`py-2 rounded-lg text-[10px] font-bold transition-all ${
-                      customWork === p && mode === 'work'
-                        ? 'bg-lumina-accent/20 text-lumina-accent border border-lumina-accent/30' 
-                        : 'bg-white/5 text-lumina-text/40 border border-transparent hover:border-white/10'
-                    }`}
-                  >
-                    {p}m
-                  </button>
-                ))}
-              </div>
-
-              {showSettings && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="space-y-4 mt-4 pt-4 border-t border-white/5"
-                >
-                  <div>
-                    <label className="text-[9px] font-bold text-lumina-text/30 uppercase tracking-widest mb-2 block">Focus: {customWork} min</label>
-                    <input 
-                      type="range" min="5" max="120" value={customWork}
-                      onChange={(e) => { const v = Number(e.target.value); setCustomWork(v); if (!isActive && mode === 'work') setTimeLeft(v * 60); }}
-                      data-testid="focus-duration-slider"
-                      className="w-full accent-lumina-accent h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-bold text-lumina-text/30 uppercase tracking-widest mb-2 block">Short Break: {customShort} min</label>
-                    <input 
-                      type="range" min="1" max="30" value={customShort}
-                      onChange={(e) => { const v = Number(e.target.value); setCustomShort(v); if (!isActive && mode === 'short') setTimeLeft(v * 60); }}
-                      data-testid="short-break-slider"
-                      className="w-full accent-lumina-accent h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-bold text-lumina-text/30 uppercase tracking-widest mb-2 block">Long Break: {customLong} min</label>
-                    <input 
-                      type="range" min="5" max="60" value={customLong}
-                      onChange={(e) => { const v = Number(e.target.value); setCustomLong(v); if (!isActive && mode === 'long') setTimeLeft(v * 60); }}
-                      data-testid="long-break-slider"
-                      className="w-full accent-lumina-accent h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-bold text-lumina-text/30 uppercase tracking-widest mb-2 block">Sessions before long break: {sessionsBeforeLong}</label>
-                    <input 
-                      type="range" min="2" max="8" value={sessionsBeforeLong}
-                      onChange={(e) => setSessionsBeforeLong(Number(e.target.value))}
-                      data-testid="sessions-before-long-slider"
-                      className="w-full accent-lumina-accent h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
-                    />
-                  </div>
-                </motion.div>
-              )}
             </div>
 
             <div className="card-lumina">
@@ -1575,7 +1203,6 @@ const FocusView = ({
                 <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">Hardcore Mode</h3>
                 <button 
                   onClick={() => setHardcoreMode(!hardcoreMode)}
-                  data-testid="hardcore-mode-toggle"
                   className={`w-10 h-5 rounded-full relative transition-all ${hardcoreMode ? 'bg-lumina-accent' : 'bg-white/10'}`}
                 >
                   <motion.div 
@@ -1592,26 +1219,17 @@ const FocusView = ({
             <div className="card-lumina">
               <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Neural Ambience</h3>
               <div className="grid grid-cols-2 gap-2">
-                {[
-                  { name: 'None', icon: <X size={12} /> },
-                  { name: 'Rain', icon: <CloudRain size={12} /> },
-                  { name: 'Lo-Fi', icon: <Headphones size={12} /> },
-                  { name: 'Waves', icon: <Music size={12} /> },
-                  { name: 'Forest', icon: <Sun size={12} /> },
-                  { name: 'Night', icon: <Moon size={12} /> },
-                ].map((music) => (
+                {['None', 'Rain', 'Lo-Fi', 'Waves'].map((music) => (
                   <button
-                    key={music.name}
-                    onClick={() => setSelectedMusic(music.name)}
-                    data-testid={`ambience-${music.name.toLowerCase()}`}
-                    className={`py-2 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${
-                      selectedMusic === music.name 
+                    key={music}
+                    onClick={() => setSelectedMusic(music)}
+                    className={`py-2 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+                      selectedMusic === music 
                         ? 'bg-lumina-accent/20 text-lumina-accent border border-lumina-accent/30' 
                         : 'bg-white/5 text-lumina-text/40 border border-transparent hover:border-white/10'
                     }`}
                   >
-                    {music.icon}
-                    {music.name}
+                    {music}
                   </button>
                 ))}
               </div>
@@ -1706,7 +1324,6 @@ const VaultView = ({
   const [activeSubjectId, setActiveSubjectId] = useState<string | null>(subjects[0]?.id || null);
   const [newTopicName, setNewTopicName] = useState('');
   const [previewTopic, setPreviewTopic] = useState<Topic | null>(null);
-  const [repairTopic, setRepairTopic] = useState<Topic | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -1835,7 +1452,7 @@ const VaultView = ({
               className="btn-primary flex items-center gap-2"
             >
               <Plus size={18} />
-              Add Notes
+              New Chapter
             </button>
           </div>
         </header>
@@ -1879,7 +1496,7 @@ const VaultView = ({
                 <div className="relative">
                   <input 
                     type="text" 
-                    placeholder="New Subject..."
+                    placeholder="New Directory..."
                     value={newSubjectName}
                     onChange={(e) => setNewSubjectName(e.target.value)}
                     onKeyDown={(e) => {
@@ -1941,8 +1558,12 @@ const VaultView = ({
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-lumina-accent/10 border border-lumina-accent/20 flex items-center justify-center text-lumina-accent">
-                      <Folder size={24} />
+                    <div className="w-16 h-16 rounded-2xl bg-lumina-accent/10 border border-lumina-accent/20 overflow-hidden flex items-center justify-center text-lumina-accent relative group">
+                      {activeSubject.imageUrl ? (
+                        <img src={activeSubject.imageUrl} alt={activeSubject.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                      ) : (
+                        <Folder size={24} />
+                      )}
                     </div>
                     <div>
                       <h2 className="text-2xl font-display font-bold text-lumina-text tracking-tight">{activeSubject.name}</h2>
@@ -1956,7 +1577,7 @@ const VaultView = ({
                     <div className="relative">
                       <input 
                         type="text" 
-                        placeholder="New Note Name..."
+                        placeholder="New Chapter Name..."
                         value={newTopicName}
                         onChange={(e) => setNewTopicName(e.target.value)}
                         onKeyDown={(e) => {
@@ -1983,34 +1604,15 @@ const VaultView = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {activeSubject.topics.map((topic) => {
-                    const isFading = topic.progress < 50 || topic.masteryLevel < 2;
-                    return (
+                  {activeSubject.topics.map((topic) => (
                     <motion.div
                       key={topic.id}
                       layoutId={topic.id}
-                      onClick={() => isFading ? setRepairTopic(topic) : setPreviewTopic(topic)}
-                      data-testid={`topic-card-${topic.id}`}
-                      className={`card-lumina p-6 group cursor-pointer transition-all relative overflow-hidden ${
-                        isFading 
-                          ? 'border-red-500/40 hover:border-red-500/60 animate-[glitch_3s_infinite]' 
-                          : 'hover:border-lumina-accent/30'
-                      }`}
+                      onClick={() => setPreviewTopic(topic)}
+                      className="card-lumina p-6 group cursor-pointer hover:border-lumina-accent/30 transition-all"
                     >
-                      {isFading && (
-                        <>
-                          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48bGluZSB4MT0iMCIgeTE9IjQwIiB4Mj0iMjAwIiB5Mj0iNjAiIHN0cm9rZT0icmdiYSgyMzksMjksMjksMC4wOCkiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSI1MCIgeTE9IjAiIHgyPSIxNTAiIHkyPSIyMDAiIHN0cm9rZT0icmdiYSgyMzksMjksMjksMC4wNikiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSIxMjAiIHkxPSIxMCIgeDI9IjgwIiB5Mj0iMTkwIiBzdHJva2U9InJnYmEoMjM5LDI5LDI5LDAuMDYpIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4=')] opacity-50 pointer-events-none" />
-                          <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-red-500/20 border border-red-500/30">
-                            <span className="text-[8px] font-bold text-red-400 uppercase tracking-widest">Fading</span>
-                          </div>
-                        </>
-                      )}
                       <div className="flex items-start justify-between mb-6">
-                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
-                          isFading 
-                            ? 'bg-red-500/10 border-red-500/20 text-red-400' 
-                            : 'bg-white/5 border-white/10 text-lumina-text/40 group-hover:text-lumina-accent'
-                        }`}>
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lumina-text/40 group-hover:text-lumina-accent transition-colors">
                           <BookOpen size={20} />
                         </div>
                         <div className="flex items-center gap-3">
@@ -2018,7 +1620,7 @@ const VaultView = ({
                             {[...Array(5)].map((_, i) => (
                               <div 
                                 key={i} 
-                                className={`w-1 h-3 rounded-full ${i < topic.masteryLevel ? (isFading ? 'bg-red-400' : 'bg-lumina-accent') : 'bg-white/10'}`} 
+                                className={`w-1 h-3 rounded-full ${i < topic.masteryLevel ? 'bg-lumina-accent' : 'bg-white/10'}`} 
                               />
                             ))}
                           </div>
@@ -2030,7 +1632,7 @@ const VaultView = ({
                           </button>
                         </div>
                       </div>
-                      <h3 className={`text-lg font-bold mb-2 transition-colors ${isFading ? 'text-red-400' : 'text-lumina-text group-hover:text-lumina-accent'}`}>{topic.name}</h3>
+                      <h3 className="text-lg font-bold text-lumina-text mb-2 group-hover:text-lumina-accent transition-colors">{topic.name}</h3>
                       <p className="text-xs text-lumina-text/40 line-clamp-2 mb-6 leading-relaxed">
                         {topic.description}
                       </p>
@@ -2038,21 +1640,17 @@ const VaultView = ({
                         <div className="flex items-center gap-4">
                           <div className="flex flex-col">
                             <span className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Progress</span>
-                            <span className={`text-[10px] font-bold ${isFading ? 'text-red-400' : 'text-lumina-text'}`}>{topic.progress}%</span>
+                            <span className="text-[10px] font-bold text-lumina-text">{topic.progress}%</span>
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Next Review</span>
                             <span className="text-[10px] font-bold text-lumina-accent">{topic.nextReview}</span>
                           </div>
                         </div>
-                        {isFading 
-                          ? <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest">Repair</span>
-                          : <ArrowRight size={16} className="text-lumina-text/20 group-hover:translate-x-1 group-hover:text-lumina-accent transition-all" />
-                        }
+                        <ArrowRight size={16} className="text-lumina-text/20 group-hover:translate-x-1 group-hover:text-lumina-accent transition-all" />
                       </div>
                     </motion.div>
-                    );
-                  })}
+                  ))}
 
                   {activeSubject.topics.length === 0 && (
                     <div className="col-span-2 py-20 flex flex-col items-center justify-center text-center">
@@ -2063,11 +1661,6 @@ const VaultView = ({
                       <p className="text-xs text-lumina-text/20 uppercase tracking-widest">No neural chapters synchronized yet.</p>
                     </div>
                   )}
-                </div>
-
-                {/* Magic Drop Zone */}
-                <div className="mt-8">
-                  <MagicDropZone user={user} activeSubjectId={activeSubjectId} onAddTopic={onAddTopic} />
                 </div>
               </motion.div>
             ) : (
@@ -2281,8 +1874,7 @@ const VaultView = ({
                 </div>
 
                 <button 
-                  onClick={() => { if (previewTopic) { onJumpToFocus(previewTopic); setPreviewTopic(null); } }}
-                  data-testid="initialize-focus-btn"
+                  onClick={() => { setPreviewTopic(null); /* Navigate to focus */ }}
                   className="btn-primary w-full py-4 text-xs uppercase tracking-[0.2em]"
                 >
                   Initialize Focus Session
@@ -2290,17 +1882,6 @@ const VaultView = ({
               </div>
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Repair Memory Modal */}
-      <AnimatePresence>
-        {repairTopic && (
-          <RepairMemoryModal 
-            topic={repairTopic} 
-            onClose={() => setRepairTopic(null)}
-            onRepaired={() => setRepairTopic(null)}
-          />
         )}
       </AnimatePresence>
     </div>
@@ -2390,6 +1971,11 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
     }
   };
 
+  const heatmapData = Array.from({ length: 52 * 7 }, (_, i) => ({
+    date: i,
+    value: Math.floor(Math.random() * 5)
+  }));
+
   return (
     <div className="pt-32 px-6 pb-20 min-h-screen relative font-sans">
       <div className="max-w-7xl mx-auto relative z-10">
@@ -2402,14 +1988,9 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
             <h1 className="text-5xl font-display font-bold text-lumina-text tracking-tight">Profile</h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getRankColor(user.rank)} flex items-center justify-center shadow-lg`}>
-                {getRankIcon(user.rank)}
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest mb-1">Rank</span>
-                <span className={`text-sm font-bold bg-gradient-to-r ${getRankColor(user.rank)} bg-clip-text text-transparent uppercase tracking-widest`}>{user.rank}</span>
-              </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest mb-1">Neural Rank</span>
+              <span className="text-sm font-bold text-lumina-accent uppercase tracking-widest">{user.rank}</span>
             </div>
             <div className="w-px h-10 bg-white/10" />
             <button 
@@ -2437,6 +2018,11 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
                     referrerPolicy="no-referrer"
                   />
                 </div>
+                {!isEditing && (
+                  <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-[#0a0a0a] border border-lumina-accent/30 rounded-xl flex items-center justify-center text-lumina-accent rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                    {getRankIcon(user.rank, 24)}
+                  </div>
+                )}
                 {isEditing && (
                   <div 
                     className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-lumina-accent text-black flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-transform"
@@ -2512,74 +2098,35 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
 
             <div className="card-lumina p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-bold text-lumina-text">Study Summary</h3>
-                <TrendingUp size={16} className="text-lumina-accent" />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-white/5 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-display font-bold text-lumina-accent">{subjects.length}</div>
-                  <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest mt-1">Subjects</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-display font-bold text-lumina-text">{subjects.flatMap(s => s.topics).length}</div>
-                  <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest mt-1">Topics</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-display font-bold text-lumina-accent">{Math.round(subjects.flatMap(s => s.topics).reduce((a, t) => a + t.progress, 0) / Math.max(subjects.flatMap(s => s.topics).length, 1))}%</div>
-                  <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest mt-1">Avg Mastery</div>
+                <h3 className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">Neural Consistency</h3>
+                <div className="flex gap-1">
+                  {[0.2, 0.4, 0.6, 0.8, 1].map((op, i) => (
+                    <div key={i} className="w-2 h-2 rounded-sm" style={{ backgroundColor: `rgba(212, 255, 0, ${op})` }} />
+                  ))}
                 </div>
               </div>
-              <p className="text-[10px] text-lumina-text/20 uppercase tracking-widest mt-4 text-center">Activity heatmap available in Metrics tab</p>
+              <div className="grid grid-cols-52 grid-rows-7 gap-1 h-24">
+                {heatmapData.map((d) => (
+                  <div 
+                    key={d.date} 
+                    className={`rounded-[1px] transition-colors ${
+                      d.value === 0 ? 'bg-white/5' :
+                      d.value === 1 ? 'bg-lumina-accent/20' :
+                      d.value === 2 ? 'bg-lumina-accent/40' :
+                      d.value === 3 ? 'bg-lumina-accent/70' : 'bg-lumina-accent'
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between mt-4 text-[8px] font-bold text-lumina-text/20 uppercase tracking-widest">
+                <span>Past 365 Days</span>
+                <span>{heatmapData.filter(d => d.value > 0).length} Active Sessions</span>
+              </div>
             </div>
           </div>
 
           {/* Analytics Column */}
           <div className="lg:col-span-8 space-y-8">
-            {/* Rank Progression Card */}
-            <div className="card-lumina p-8">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">Rank Progression</h3>
-                <Trophy size={16} className="text-lumina-accent" />
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { rank: 'Novice', minXp: 0, icon: <Shield size={20} className="text-gray-500" />, color: 'from-gray-500 to-gray-600' },
-                  { rank: 'Apprentice', minXp: 200, icon: <Shield size={20} className="text-amber-600" />, color: 'from-amber-600 to-orange-700' },
-                  { rank: 'Scholar', minXp: 500, icon: <BookOpen size={20} className="text-gray-300" />, color: 'from-gray-300 to-gray-500' },
-                  { rank: 'Adept', minXp: 1000, icon: <Shield size={20} className="text-yellow-400" />, color: 'from-yellow-400 to-orange-500' },
-                  { rank: 'Sage', minXp: 2000, icon: <Medal size={20} className="text-green-400" />, color: 'from-green-400 to-emerald-600' },
-                  { rank: 'Virtuoso', minXp: 4000, icon: <Trophy size={20} className="text-blue-300" />, color: 'from-blue-300 to-indigo-500' },
-                  { rank: 'Luminary', minXp: 7000, icon: <Sparkles size={20} className="text-amber-300" />, color: 'from-amber-300 to-yellow-500' },
-                  { rank: 'Archon', minXp: 12000, icon: <Star size={20} className="text-cyan-300" />, color: 'from-cyan-300 to-blue-500' },
-                  { rank: 'Transcendent', minXp: 20000, icon: <Gem size={20} className="text-red-400" />, color: 'from-red-400 to-rose-600' },
-                  { rank: 'Omniscient', minXp: 35000, icon: <Sparkles size={20} className="text-purple-300" />, color: 'from-purple-300 to-violet-500' },
-                  { rank: 'Eternal', minXp: 60000, icon: <Crown size={20} className="text-yellow-200" />, color: 'from-yellow-200 via-amber-400 to-orange-500' },
-                ].map((r) => {
-                  const isUnlocked = user.xp >= r.minXp;
-                  const isCurrent = user.rank.toLowerCase().includes(r.rank.toLowerCase());
-                  return (
-                    <div 
-                      key={r.rank}
-                      className={`p-4 rounded-2xl border transition-all ${
-                        isCurrent 
-                          ? 'bg-lumina-accent/10 border-lumina-accent/30 shadow-[0_0_20px_rgba(212,255,0,0.1)]' 
-                          : isUnlocked 
-                            ? 'bg-white/5 border-white/10' 
-                            : 'bg-white/[0.02] border-white/5 opacity-40'
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${isUnlocked ? `bg-gradient-to-br ${r.color}` : 'bg-white/5'}`}>
-                        {r.icon}
-                      </div>
-                      <div className="text-xs font-bold text-lumina-text uppercase tracking-tight">{r.rank}</div>
-                      <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest mt-1">{r.minXp.toLocaleString()} XP</div>
-                      {isCurrent && <div className="w-full h-0.5 bg-lumina-accent rounded-full mt-2" />}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
             <div className="card-lumina p-8">
               <h3 className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest mb-8">Mastery Milestones</h3>
               <div className="space-y-4">
@@ -2617,124 +2164,7 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
   );
 };
 
-const NotificationsView = ({ notifications, subjects, user }: { notifications: Notification[], subjects: Subject[], user: UserProfile }) => {
-  const generateDynamicNotifications = () => {
-    const dynamic: { id: string, uid: string, title: string, message: string, time: string, type: 'reminder' | 'achievement' | 'system', isRead: boolean }[] = [];
-    
-    const allTopics = subjects.flatMap(s => s.topics);
-    
-    allTopics.forEach((topic, i) => {
-      if (topic.progress < 100 && topic.lastReviewed !== 'Never') {
-        dynamic.push({
-          id: `decay-${topic.id}`,
-          uid: user.uid,
-          title: `${topic.name} is fading!`,
-          message: `Your "${topic.name}" chapter is slipping away from memory! A quick review session now will lock it in. Don't let your progress decay!`,
-          time: 'Now',
-          type: 'reminder',
-          isRead: false
-        });
-      }
-    });
-
-    if (user.streak >= 3) {
-      dynamic.push({
-        id: 'streak-fire',
-        uid: user.uid,
-        title: `${user.streak}-Day Streak!`,
-        message: `You're absolutely crushing it! ${user.streak} days of consistent learning. Your brain is building powerful neural pathways right now!`,
-        time: 'Today',
-        type: 'achievement',
-        isRead: false
-      });
-    }
-
-    if (user.streak === 0) {
-      dynamic.push({
-        id: 'streak-broken',
-        uid: user.uid,
-        title: 'Your streak needs attention!',
-        message: 'Start a focus session today to rebuild your streak. Even 15 minutes can make a huge difference in retention!',
-        time: 'Today',
-        type: 'reminder',
-        isRead: false
-      });
-    }
-
-    const nextRankXp = [200, 500, 1000, 2000, 4000, 7000, 12000, 20000, 35000, 60000].find(x => x > user.xp);
-    if (nextRankXp) {
-      const remaining = nextRankXp - user.xp;
-      if (remaining < 300) {
-        dynamic.push({
-          id: 'rank-close',
-          uid: user.uid,
-          title: 'Rank Up Incoming!',
-          message: `Only ${remaining} XP away from your next rank! One solid focus session could get you there!`,
-          time: 'Now',
-          type: 'achievement',
-          isRead: false
-        });
-      }
-    }
-
-    if (allTopics.length > 0) {
-      const lowProgress = allTopics.filter(t => t.progress < 50 && t.progress > 0);
-      lowProgress.slice(0, 2).forEach(topic => {
-        dynamic.push({
-          id: `low-${topic.id}`,
-          uid: user.uid,
-          title: `MemorEase "${topic.name}" now!`,
-          message: `This chapter is at only ${topic.progress}% mastery. The forgetting curve is working against you - review it before it drops further!`,
-          time: '1h ago',
-          type: 'reminder',
-          isRead: true
-        });
-      });
-    }
-
-    if (user.level >= 5) {
-      dynamic.push({
-        id: 'level-milestone',
-        uid: user.uid,
-        title: `Level ${user.level} Achieved!`,
-        message: `Incredible progress! You've reached Level ${user.level}. Your dedication to learning is truly inspiring!`,
-        time: 'Recent',
-        type: 'achievement',
-        isRead: true
-      });
-    }
-
-    if (subjects.length > 0) {
-      dynamic.push({
-        id: 'daily-goal',
-        uid: user.uid,
-        title: 'Daily Focus Goal',
-        message: `You have ${allTopics.filter(t => t.progress < 100).length} chapters still in progress. Try to complete at least one review session today!`,
-        time: 'Morning',
-        type: 'system',
-        isRead: true
-      });
-    }
-
-    const completedTopics = allTopics.filter(t => t.progress === 100);
-    if (completedTopics.length > 0) {
-      dynamic.push({
-        id: 'mastery-celebrate',
-        uid: user.uid,
-        title: `${completedTopics.length} Chapters Mastered!`,
-        message: `You've fully mastered ${completedTopics.length} chapter${completedTopics.length > 1 ? 's' : ''}! Knowledge deeply encoded in your neural pathways!`,
-        time: 'This week',
-        type: 'achievement',
-        isRead: true
-      });
-    }
-
-    return dynamic;
-  };
-
-  const dynamicNotifs = generateDynamicNotifications();
-  const allNotifications = [...notifications, ...dynamicNotifs];
-
+const NotificationsView = ({ notifications }: { notifications: Notification[] }) => {
   const markAllRead = async () => {
     try {
       const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
@@ -2750,32 +2180,11 @@ const NotificationsView = ({ notifications, subjects, user }: { notifications: N
   };
 
   const deleteNotification = async (id: string) => {
-    if (id.startsWith('decay-') || id.startsWith('streak-') || id.startsWith('rank-') || id.startsWith('low-') || id.startsWith('level-') || id.startsWith('daily-') || id.startsWith('mastery-')) return;
     try {
       await supabase.from('notifications').delete().eq('id', id);
     } catch (error) {
       console.error('Error deleting notification:', error);
     }
-  };
-
-  const getNotifEmoji = (type: string, title: string) => {
-    const t = title.toLowerCase();
-    if (t.includes('fading') || t.includes('fade') || t.includes('decay') || t.includes('memorease')) return '🧠';
-    if (t.includes('streak') && !t.includes('attention')) return '🔥';
-    if (t.includes('streak') && t.includes('attention')) return '⚡';
-    if (t.includes('rank')) return '🏅';
-    if (t.includes('level')) return '⭐';
-    if (t.includes('mastered') || t.includes('milestone')) return '🏆';
-    if (t.includes('daily') || t.includes('goal')) return '🎯';
-    if (type === 'reminder') return '📚';
-    if (type === 'achievement') return '🌟';
-    return '⚡';
-  };
-
-  const getNotifBg = (type: string) => {
-    if (type === 'reminder') return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
-    if (type === 'achievement') return 'bg-lumina-accent/10 text-lumina-accent border-lumina-accent/20';
-    return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
   };
 
   return (
@@ -2788,11 +2197,9 @@ const NotificationsView = ({ notifications, subjects, user }: { notifications: N
               System Logs
             </div>
             <h1 className="text-5xl font-display font-bold text-lumina-text tracking-tight">Notifications</h1>
-            <p className="text-sm text-lumina-text/30 mt-2">Stay on top of your learning journey</p>
           </div>
           <button 
             onClick={markAllRead}
-            data-testid="clear-all-notifications"
             className="text-[10px] font-bold text-lumina-accent hover:underline flex items-center gap-2 uppercase tracking-widest"
           >
             <CheckCheck size={14} /> Clear All
@@ -2800,47 +2207,43 @@ const NotificationsView = ({ notifications, subjects, user }: { notifications: N
         </header>
 
         <div className="space-y-4">
-          {allNotifications.length > 0 ? (
-            allNotifications.map((n, i) => {
-              return (
-                <motion.div
-                  key={n.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  data-testid={`notification-item-${n.id}`}
-                  className={`card-lumina p-6 flex items-start gap-6 relative group transition-all ${!n.isRead ? 'border-lumina-accent/50' : ''}`}
-                >
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${getNotifBg(n.type)}`}>
-                    <span className="text-2xl">{getNotifEmoji(n.type, n.title)}</span>
+          {notifications.length > 0 ? (
+            notifications.map((n, i) => (
+              <motion.div
+                key={n.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className={`card-lumina p-6 flex items-start gap-6 relative group transition-all ${!n.isRead ? 'border-lumina-accent/50' : ''}`}
+              >
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                  n.type === 'reminder' ? 'bg-lumina-accent/10 text-lumina-accent text-2xl' :
+                  n.type === 'achievement' ? 'bg-white/10 text-white text-2xl' : 'bg-white/5 text-lumina-text/40 text-2xl'
+                }`}>
+                  {n.icon ? n.icon : (
+                    n.type === 'reminder' ? '🧠' : n.type === 'achievement' ? '🏆' : '🔔'
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-sm font-bold text-lumina-text uppercase tracking-tight">{n.title}</h3>
+                    <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">{n.time}</span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-sm font-bold text-lumina-text tracking-tight flex items-center gap-2">
-                        {n.title}
-                        {!n.isRead && <span className="w-2 h-2 bg-lumina-accent rounded-full inline-block animate-pulse" />}
-                      </h3>
-                      <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest shrink-0 ml-4">{n.time}</span>
-                    </div>
-                    <p className="text-xs text-lumina-text/50 leading-relaxed">{n.message}</p>
-                    {n.type === 'reminder' && (
-                      <button className="mt-3 text-[10px] font-bold text-lumina-accent uppercase tracking-widest hover:underline flex items-center gap-1">
-                        Review Now <ChevronRight size={12} />
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => deleteNotification(n.id)}
-                      data-testid={`delete-notification-${n.id}`}
-                      className="w-10 h-10 rounded-xl bg-white/5 text-lumina-text/40 flex items-center justify-center hover:bg-red-500 hover:text-black transition-all"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })
+                  <p className="text-xs text-lumina-text/40 leading-relaxed">{n.message}</p>
+                </div>
+                <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => deleteNotification(n.id)}
+                    className="w-10 h-10 rounded-xl bg-white/5 text-lumina-text/40 flex items-center justify-center hover:bg-red-500 hover:text-black transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                {!n.isRead && (
+                  <div className="absolute top-4 left-4 w-2 h-2 bg-lumina-accent rounded-full animate-pulse" />
+                )}
+              </motion.div>
+            ))
           ) : (
             <div className="py-32 text-center text-lumina-text/10">
               <Zap size={48} className="mx-auto mb-6" />
@@ -2849,33 +2252,19 @@ const NotificationsView = ({ notifications, subjects, user }: { notifications: N
           )}
         </div>
 
-        <div className="mt-16 p-8 card-lumina relative overflow-hidden group border-orange-500/30">
-          <div className="absolute top-0 left-0 w-1 h-full bg-orange-500" />
+        <div className="mt-16 p-8 card-lumina relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-1 h-full bg-lumina-accent" />
           <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-              <span className="text-3xl">🧠</span>
+            <div className="w-16 h-16 rounded-2xl bg-lumina-accent flex items-center justify-center text-black shadow-2xl group-hover:scale-110 transition-transform">
+              <Brain size={32} />
             </div>
             <div className="flex-1 text-center md:text-left">
-              <h3 className="text-lg font-bold text-lumina-text mb-2 tracking-tight">Memory Decay Alert</h3>
-              <p className="text-xs text-lumina-text/40 leading-relaxed">
-                Your chapters are starting to fade! The forgetting curve is real - a quick 10-minute review can save weeks of relearning. Don't let your hard work slip away!
+              <h3 className="text-lg font-bold text-lumina-text mb-2 uppercase tracking-tight">Memory Decay Alert</h3>
+              <p className="text-xs text-lumina-text/40 uppercase tracking-widest leading-relaxed">
+                Quantum Physics: Schrödinger's Cat is nearing the forgetting threshold. Review now to maintain 90% retention.
               </p>
             </div>
-            <button className="btn-primary w-full md:w-auto py-4 px-10 text-[10px] uppercase tracking-[0.2em]" data-testid="review-now-btn">Review Now</button>
-          </div>
-        </div>
-
-        {/* Motivational Banner */}
-        <div className="mt-8 p-6 card-lumina relative overflow-hidden group border-lumina-accent/20">
-          <div className="absolute top-0 left-0 w-1 h-full bg-lumina-accent" />
-          <div className="flex items-center gap-6">
-            <span className="text-4xl">💡</span>
-            <div>
-              <h3 className="text-sm font-bold text-lumina-text mb-1">Pro Tip</h3>
-              <p className="text-xs text-lumina-text/40 leading-relaxed">
-                Students who review within 24 hours retain 80% more information. Your next review session could be the difference between remembering and forgetting!
-              </p>
-            </div>
+            <button className="btn-primary w-full md:w-auto py-4 px-10 text-[10px] uppercase tracking-[0.2em]">Review Now</button>
           </div>
         </div>
       </div>
@@ -2918,7 +2307,6 @@ const CommandPalette = ({
     { name: 'Neural Dossier', action: () => { setView('profile'); setIsOpen(false); }, icon: <User size={16} /> },
     { name: 'Neural Repository', action: () => { setView('vault'); setIsOpen(false); }, icon: <Database size={16} /> },
     { name: 'Focus Chamber', action: () => { setView('focus'); setIsOpen(false); }, icon: <Timer size={16} /> },
-    { name: 'Battle Arena', action: () => { setView('battle'); setIsOpen(false); }, icon: <Sword size={16} /> },
     { name: 'Command Center', action: () => { setView('overview'); setIsOpen(false); }, icon: <LayoutDashboard size={16} /> },
     { name: 'Terminate Session', action: () => { setView('auth'); setIsOpen(false); }, icon: <LogOut size={16} /> },
   ];
@@ -3134,977 +2522,46 @@ const SocraticInterrogation = ({ topic, onClose, onComplete }: { topic: Topic, o
 
 // --- Main App ---
 
-const getMemorEaseRank = (xp: number) => {
-  if (xp < 200) return 'Novice';
-  if (xp < 500) return 'Apprentice';
-  if (xp < 1000) return 'Scholar';
-  if (xp < 2000) return 'Adept';
-  if (xp < 4000) return 'Sage';
-  if (xp < 7000) return 'Virtuoso';
-  if (xp < 12000) return 'Luminary';
-  if (xp < 20000) return 'Archon';
-  if (xp < 35000) return 'Transcendent';
-  if (xp < 60000) return 'Omniscient';
-  return 'Eternal';
+const getValorantRank = (xp: number) => {
+  if (xp < 100) return 'Iron 1';
+  if (xp < 200) return 'Iron 2';
+  if (xp < 300) return 'Iron 3';
+  if (xp < 500) return 'Bronze 1';
+  if (xp < 700) return 'Bronze 2';
+  if (xp < 900) return 'Bronze 3';
+  if (xp < 1200) return 'Silver 1';
+  if (xp < 1500) return 'Silver 2';
+  if (xp < 1800) return 'Silver 3';
+  if (xp < 2200) return 'Gold 1';
+  if (xp < 2600) return 'Gold 2';
+  if (xp < 3000) return 'Gold 3';
+  if (xp < 3500) return 'Platinum 1';
+  if (xp < 4000) return 'Platinum 2';
+  if (xp < 4500) return 'Platinum 3';
+  if (xp < 5200) return 'Diamond 1';
+  if (xp < 5900) return 'Diamond 2';
+  if (xp < 6600) return 'Diamond 3';
+  if (xp < 7500) return 'Ascendant 1';
+  if (xp < 8400) return 'Ascendant 2';
+  if (xp < 9300) return 'Ascendant 3';
+  if (xp < 10500) return 'Immortal 1';
+  if (xp < 12000) return 'Immortal 2';
+  if (xp < 14000) return 'Immortal 3';
+  return 'Radiant';
 };
 
-// ========================================
-// FEATURE 1: TRIAGE MODE (24-Hour Panic Button)
-// ========================================
-const TriageModeWidget = ({ subjects, user, onJumpToFocus }: { subjects: Subject[], user: UserProfile, onJumpToFocus: (t: Topic) => void }) => {
-  const [isTriageActive, setIsTriageActive] = useState(false);
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
-
-  const fadingTopics = subjects.flatMap(s => s.topics).filter(t => 
-    t.progress < 50 || t.masteryLevel < 3 || t.lastReviewed === 'Never'
-  );
-
-  const toggleTriage = () => {
-    setIsTriageActive(!isTriageActive);
-    setCurrentCardIndex(0);
-    setShowAnswer(false);
-  };
-
-  const nextCard = () => {
-    setShowAnswer(false);
-    setCurrentCardIndex(prev => (prev + 1) % Math.max(fadingTopics.length, 1));
-  };
-
-  if (!isTriageActive) {
-    return (
-      <button
-        onClick={toggleTriage}
-        data-testid="triage-mode-btn"
-        className="w-full card-lumina p-5 border-red-500/30 hover:border-red-500/60 transition-all group cursor-pointer flex items-center gap-3 h-full"
-      >
-        <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
-          <Siren size={18} className="text-red-400" />
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <div className="text-xs font-bold text-red-400 truncate">Triage Mode</div>
-          <div className="text-[10px] text-lumina-text/30 truncate">{fadingTopics.length} fading topics</div>
-        </div>
-        <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
-          <span className="text-[10px] font-bold text-red-400">{fadingTopics.length}</span>
-        </div>
-      </button>
-    );
-  }
-
-  const currentTopic = fadingTopics[currentCardIndex % Math.max(fadingTopics.length, 1)];
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center p-6"
-      style={{ background: 'radial-gradient(ellipse at center, rgba(127,29,29,0.15) 0%, rgba(0,0,0,0.95) 70%)' }}
-    >
-      <div className="max-w-2xl w-full">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-red-400 text-[10px] font-bold uppercase tracking-[0.3em]">Emergency Triage Active</span>
-          </div>
-          <button 
-            onClick={toggleTriage}
-            data-testid="exit-triage-btn"
-            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text/40 hover:text-lumina-text uppercase tracking-widest transition-all"
-          >
-            Exit Triage
-          </button>
-        </div>
-
-        {fadingTopics.length > 0 && currentTopic ? (
-          <motion.div
-            key={currentCardIndex}
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="card-lumina p-10 border-red-500/20 relative overflow-hidden"
-          >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500" />
-            
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-[10px] font-bold text-red-400/60 uppercase tracking-widest">Card {currentCardIndex + 1} of {fadingTopics.length}</span>
-              <div className="flex items-center gap-2">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className={`w-1.5 h-4 rounded-full ${i < currentTopic.masteryLevel ? 'bg-red-400' : 'bg-white/10'}`} />
-                ))}
-              </div>
-            </div>
-
-            <h2 className="text-3xl font-display font-bold text-lumina-text mb-3 tracking-tight">{currentTopic.name}</h2>
-            <p className="text-sm text-lumina-text/40 mb-8 leading-relaxed">{currentTopic.description}</p>
-
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="bg-white/5 rounded-xl p-3 text-center">
-                <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Progress</div>
-                <div className="text-lg font-bold text-red-400">{currentTopic.progress}%</div>
-              </div>
-              <div className="bg-white/5 rounded-xl p-3 text-center">
-                <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Mastery</div>
-                <div className="text-lg font-bold text-lumina-text">Lv.{currentTopic.masteryLevel}</div>
-              </div>
-              <div className="bg-white/5 rounded-xl p-3 text-center">
-                <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mb-1">Last Seen</div>
-                <div className="text-lg font-bold text-orange-400">{currentTopic.lastReviewed}</div>
-              </div>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {showAnswer ? (
-                <motion.div
-                  key="answer"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="bg-lumina-accent/5 border border-lumina-accent/20 rounded-2xl p-6 mb-8"
-                >
-                  <p className="text-sm text-lumina-text/60 leading-relaxed">
-                    This topic covers key concepts in <strong className="text-lumina-accent">{currentTopic.name}</strong>. 
-                    You have {currentTopic.chapters} chapter{currentTopic.chapters > 1 ? 's' : ''} to review. 
-                    Focus on reinforcing weak areas to prevent further decay.
-                  </p>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-
-            <div className="flex gap-3">
-              {!showAnswer ? (
-                <button
-                  onClick={() => setShowAnswer(true)}
-                  data-testid="triage-reveal-btn"
-                  className="flex-1 py-4 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-lumina-text uppercase tracking-widest hover:bg-white/10 transition-all"
-                >
-                  Reveal Details
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={nextCard}
-                    data-testid="triage-skip-btn"
-                    className="flex-1 py-4 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-lumina-text/40 uppercase tracking-widest hover:bg-white/10 transition-all"
-                  >
-                    Skip
-                  </button>
-                  <button
-                    onClick={() => { toggleTriage(); onJumpToFocus(currentTopic); }}
-                    data-testid="triage-focus-btn"
-                    className="flex-[2] py-4 rounded-xl bg-red-500 text-white text-sm font-bold uppercase tracking-widest hover:bg-red-600 transition-all shadow-[0_0_30px_rgba(239,68,68,0.3)]"
-                  >
-                    Focus Now
-                  </button>
-                </>
-              )}
-            </div>
-          </motion.div>
-        ) : (
-          <div className="card-lumina p-16 text-center">
-            <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
-              <CheckCheck size={40} className="text-green-400" />
-            </div>
-            <h3 className="text-2xl font-bold text-lumina-text mb-2">All Clear!</h3>
-            <p className="text-xs text-lumina-text/40 uppercase tracking-widest">No topics are currently in danger of fading.</p>
-            <button onClick={toggleTriage} className="mt-6 btn-primary">Return to Dashboard</button>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
+const getRankIcon = (rank: string, size: number = 24) => {
+  if (rank.startsWith('Iron')) return <Shield size={size} className="text-gray-400" />;
+  if (rank.startsWith('Bronze')) return <ShieldCheck size={size} className="text-amber-700" />;
+  if (rank.startsWith('Silver')) return <Star size={size} className="text-gray-300" />;
+  if (rank.startsWith('Gold')) return <Award size={size} className="text-yellow-400" />;
+  if (rank.startsWith('Platinum')) return <Gem size={size} className="text-cyan-400" />;
+  if (rank.startsWith('Diamond')) return <Hexagon size={size} className="text-purple-400" />;
+  if (rank.startsWith('Ascendant')) return <Rocket size={size} className="text-green-400" />;
+  if (rank.startsWith('Immortal')) return <Flame size={size} className="text-red-500" />;
+  if (rank.startsWith('Radiant')) return <Crown size={size} className="text-yellow-300 drop-shadow-[0_0_10px_rgba(253,224,71,0.8)]" />;
+  return <Shield size={size} className="text-gray-400" />;
 };
-
-// ========================================
-// FEATURE 2: MAGIC DROP (Auto-Parsing Vault)
-// ========================================
-const MagicDropZone = ({ user, activeSubjectId, onAddTopic }: { user: UserProfile, activeSubjectId: string | null, onAddTopic: (subjectId: string, name: string) => void }) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [parsedCards, setParsedCards] = useState<string[]>([]);
-  const [showParsed, setShowParsed] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => setIsDragging(false);
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const text = e.dataTransfer.getData('text/plain');
-    if (text) {
-      parseContent(text);
-      return;
-    }
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0];
-      if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
-        const content = await file.text();
-        parseContent(content);
-      }
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const text = e.clipboardData.getData('text/plain');
-    if (text.length > 50) {
-      e.preventDefault();
-      parseContent(text);
-    }
-  };
-
-  const parseContent = (text: string) => {
-    const lines = text.split(/\n\n|\n(?=[A-Z0-9])/g)
-      .map(l => l.trim())
-      .filter(l => l.length > 5 && l.length < 200);
-    
-    const cards = lines.length > 0 ? lines.slice(0, 20) : text.match(/.{20,100}/g)?.slice(0, 10) || [];
-    setParsedCards(cards as string[]);
-    setShowParsed(true);
-  };
-
-  const saveAllCards = async () => {
-    if (!activeSubjectId || parsedCards.length === 0) return;
-    setSaving(true);
-    
-    for (const card of parsedCards) {
-      const title = card.substring(0, 60).replace(/[^\w\s]/g, '').trim();
-      if (title) {
-        onAddTopic(activeSubjectId, title);
-        await new Promise(r => setTimeout(r, 200));
-      }
-    }
-    
-    setSaving(false);
-    setShowParsed(false);
-    setParsedCards([]);
-  };
-
-  return (
-    <>
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onPaste={handlePaste}
-        data-testid="magic-drop-zone"
-        className={`rounded-3xl border-2 border-dashed p-10 text-center transition-all cursor-pointer ${
-          isDragging 
-            ? 'border-lumina-accent bg-lumina-accent/5 scale-[1.02]' 
-            : 'border-white/10 hover:border-white/20 bg-white/[0.02]'
-        }`}
-      >
-        <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center transition-all ${
-          isDragging ? 'bg-lumina-accent/20 scale-110' : 'bg-white/5'
-        }`}>
-          <Clipboard size={28} className={isDragging ? 'text-lumina-accent' : 'text-lumina-text/20'} />
-        </div>
-        <h3 className="text-sm font-bold text-lumina-text mb-1">Magic Drop</h3>
-        <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest leading-relaxed max-w-sm mx-auto">
-          Drop a text file, paste content, or drag notes here. Auto-parses into individual quest nodes.
-        </p>
-      </div>
-
-      <AnimatePresence>
-        {showParsed && parsedCards.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="max-w-xl w-full card-lumina p-8 max-h-[80vh] flex flex-col"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-display font-bold text-lumina-text">Parsed Quest Nodes</h2>
-                  <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest mt-1">{parsedCards.length} nodes detected</p>
-                </div>
-                <button onClick={() => { setShowParsed(false); setParsedCards([]); }} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-lumina-text/40 hover:text-lumina-text">
-                  <X size={16} />
-                </button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto space-y-2 mb-6 pr-2 custom-scrollbar">
-                {parsedCards.map((card, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10"
-                  >
-                    <div className="w-6 h-6 rounded-lg bg-lumina-accent/10 flex items-center justify-center shrink-0">
-                      <span className="text-[8px] font-bold text-lumina-accent">{i + 1}</span>
-                    </div>
-                    <span className="text-xs text-lumina-text/60 flex-1 truncate">{card}</span>
-                    <button 
-                      onClick={() => setParsedCards(prev => prev.filter((_, idx) => idx !== i))}
-                      className="text-lumina-text/20 hover:text-red-400 transition-colors shrink-0"
-                    >
-                      <X size={12} />
-                    </button>
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setShowParsed(false); setParsedCards([]); }}
-                  className="flex-1 py-3 rounded-xl bg-white/5 text-xs font-bold text-lumina-text/40 uppercase tracking-widest hover:bg-white/10 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={saveAllCards}
-                  disabled={saving || !activeSubjectId}
-                  data-testid="save-parsed-cards-btn"
-                  className="flex-[2] py-3 rounded-xl bg-lumina-accent text-black text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : `Save ${parsedCards.length} Nodes`}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-};
-
-// ========================================
-// FEATURE 3: DISTRACTION INTERCEPTOR
-// ========================================
-const DistractionInterceptor = ({ topics, user, onXpGain }: { topics: Topic[], user: UserProfile, onXpGain: (xp: number) => void }) => {
-  const [showModal, setShowModal] = useState(false);
-  const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
-  const [answered, setAnswered] = useState(false);
-  const [correct, setCorrect] = useState(false);
-  const [isActive, setIsActive] = useState(false);
-  const [quizQuestion, setQuizQuestion] = useState('');
-
-  const generateQuiz = (topic: Topic) => {
-    const questions = [
-      `What are the key principles of ${topic.name}?`,
-      `Can you explain the main concept behind ${topic.name}?`,
-      `What is the most important formula/rule in ${topic.name}?`,
-      `Name 3 sub-topics within ${topic.name}.`,
-      `How does ${topic.name} relate to real-world applications?`,
-      `What was the last thing you learned about ${topic.name}?`,
-      `What's the foundational theory of ${topic.name}?`,
-      `Describe the relationship between concepts in ${topic.name}.`,
-    ];
-    return questions[Math.floor(Math.random() * questions.length)];
-  };
-
-  useEffect(() => {
-    if (!isActive) return;
-    
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') return;
-      if (document.visibilityState === 'visible' && topics.length > 0) {
-        const fadingTopics = topics.filter(t => t.progress < 80);
-        if (fadingTopics.length > 0) {
-          const randomTopic = fadingTopics[Math.floor(Math.random() * fadingTopics.length)];
-          setCurrentTopic(randomTopic);
-          setQuizQuestion(generateQuiz(randomTopic));
-          setShowModal(true);
-          setAnswered(false);
-          setCorrect(false);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isActive, topics]);
-
-  const handleAnswer = (isCorrect: boolean) => {
-    setAnswered(true);
-    setCorrect(isCorrect);
-    if (isCorrect) {
-      onXpGain(50);
-    }
-  };
-
-  const dismissModal = () => {
-    setShowModal(false);
-    setCurrentTopic(null);
-    setAnswered(false);
-  };
-
-  return (
-    <>
-      <div className="card-lumina p-5 flex items-center justify-between gap-3 h-full">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isActive ? 'bg-lumina-accent/10 border border-lumina-accent/20' : 'bg-white/5 border border-white/10'}`}>
-            <Crosshair size={18} className={isActive ? 'text-lumina-accent' : 'text-lumina-text/30'} />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-lumina-text truncate">Interceptor</div>
-            <div className="text-[10px] text-lumina-text/30 truncate">{isActive ? 'Armed +50 XP' : 'Inactive'}</div>
-          </div>
-        </div>
-        <button
-          onClick={() => setIsActive(!isActive)}
-          data-testid="interceptor-toggle"
-          className={`w-12 h-6 rounded-full relative transition-all shrink-0 ${isActive ? 'bg-lumina-accent' : 'bg-white/10'}`}
-        >
-          <motion.div
-            animate={{ x: isActive ? 26 : 2 }}
-            className={`absolute top-1 w-4 h-4 rounded-full ${isActive ? 'bg-black' : 'bg-white/40'}`}
-          />
-        </button>
-      </div>
-
-      <AnimatePresence>
-        {showModal && currentTopic && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[250] flex items-center justify-center p-6"
-            style={{ backdropFilter: 'blur(20px)', background: 'rgba(0,0,0,0.8)' }}
-          >
-            <motion.div
-              initial={{ scale: 0.8, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 20 }}
-              className="max-w-md w-full rounded-3xl p-8 border border-white/10 relative overflow-hidden"
-              style={{ background: 'rgba(10,10,10,0.9)', backdropFilter: 'blur(24px)' }}
-            >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lumina-accent via-cyan-400 to-lumina-accent" />
-              
-              <div className="flex items-center gap-2 mb-6">
-                <Crosshair size={14} className="text-lumina-accent" />
-                <span className="text-[10px] font-bold text-lumina-accent uppercase tracking-[0.3em]">Distraction Intercepted</span>
-              </div>
-
-              <h3 className="text-xl font-display font-bold text-lumina-text mb-2">{currentTopic.name}</h3>
-
-              <div className="bg-white/5 rounded-2xl p-4 mb-6">
-                <div className="text-[10px] text-lumina-accent uppercase tracking-widest mb-2 font-bold">Quick Recall</div>
-                <p className="text-sm text-lumina-text/70 leading-relaxed">{quizQuestion}</p>
-              </div>
-
-              <div className="flex items-center gap-2 mb-6">
-                <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
-                  <div className="h-full bg-lumina-accent/50 rounded-full" style={{ width: `${currentTopic.progress}%` }} />
-                </div>
-                <span className="text-[10px] text-lumina-text/30 font-bold">{currentTopic.progress}% mastery</span>
-              </div>
-
-              {!answered ? (
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleAnswer(false)}
-                    data-testid="interceptor-no"
-                    className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text/40 uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
-                  >
-                    Can't Recall
-                  </button>
-                  <button
-                    onClick={() => handleAnswer(true)}
-                    data-testid="interceptor-yes"
-                    className="flex-[2] py-3 rounded-xl bg-lumina-accent text-black text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all"
-                  >
-                    I Got This! +50 XP
-                  </button>
-                </div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="space-y-4"
-                >
-                  <div className={`p-4 rounded-xl text-center ${correct ? 'bg-lumina-accent/10 border border-lumina-accent/30' : 'bg-orange-500/10 border border-orange-500/30'}`}>
-                    <span className="text-lg font-bold">{correct ? '+50 XP Earned!' : 'Time to review this!'}</span>
-                  </div>
-                  <button
-                    onClick={dismissModal}
-                    data-testid="interceptor-ok"
-                    className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text uppercase tracking-widest hover:bg-white/10 transition-all"
-                  >
-                    OK
-                  </button>
-                </motion.div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-};
-
-// ========================================
-// FEATURE 4: CLASS RAID WIDGET
-// ========================================
-const ClassRaidWidget = ({ user }: { user: UserProfile }) => {
-  const [raids, setRaids] = useState([
-    { id: 'r1', name: 'Advanced Architecture', bossHp: 1000, currentDamage: 647, participants: 12, reward: 500 },
-    { id: 'r2', name: 'Quantum Algorithms', bossHp: 800, currentDamage: 234, participants: 8, reward: 400 },
-  ]);
-  const [activeRaid, setActiveRaid] = useState<string | null>(null);
-  const [attacking, setAttacking] = useState(false);
-  const [damageDealt, setDamageDealt] = useState(0);
-  const [expanded, setExpanded] = useState(false);
-
-  // Try to fetch from Supabase class_raids table
-  useEffect(() => {
-    const fetchRaids = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('class_raids')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(3);
-        if (data && data.length > 0 && !error) {
-          setRaids(data.map((r: any) => ({
-            id: r.id,
-            name: r.name || r.boss_name || 'Unknown Raid',
-            bossHp: r.boss_hp || r.bossHp || 1000,
-            currentDamage: r.current_damage || r.currentDamage || 0,
-            participants: r.participants || 0,
-            reward: r.reward || 500,
-          })));
-        }
-      } catch (err) {
-        // Table might not exist yet, use mock data
-        console.log('class_raids table not found, using mock data');
-      }
-    };
-    fetchRaids();
-  }, []);
-
-  const joinRaid = async (raidId: string) => {
-    setActiveRaid(raidId);
-    setAttacking(true);
-    setDamageDealt(0);
-    
-    let dealt = 0;
-    const interval = setInterval(() => {
-      dealt += Math.floor(Math.random() * 15) + 5;
-      setDamageDealt(dealt);
-      if (dealt >= 50) {
-        clearInterval(interval);
-        setAttacking(false);
-        // Try to update in Supabase
-        supabase
-          .from('class_raids')
-          .update({ current_damage: raids.find(r => r.id === raidId)!.currentDamage + dealt })
-          .eq('id', raidId)
-          .then(() => {})
-          .catch(() => {});
-      }
-    }, 300);
-  };
-
-  const topRaid = raids[0];
-  const hpPercent = topRaid ? Math.max(0, ((topRaid.bossHp - topRaid.currentDamage - (activeRaid === topRaid.id ? damageDealt : 0)) / topRaid.bossHp) * 100) : 0;
-  const remainingHp = topRaid ? Math.max(0, topRaid.bossHp - topRaid.currentDamage - (activeRaid === topRaid.id ? damageDealt : 0)) : 0;
-
-  return (
-    <div className="card-lumina p-5 border-cyan-500/20 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
-            <Sword size={18} className="text-cyan-400" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-xs font-bold text-lumina-text truncate">Class Raids</h3>
-            <p className="text-[10px] text-lumina-text/30 truncate">Cooperative battles</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1 text-[9px] text-cyan-400 font-bold shrink-0">
-          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          Live
-        </div>
-      </div>
-
-      {/* Top raid - always visible */}
-      {topRaid && (
-        <div className="bg-white/[0.03] rounded-xl p-3 border border-white/5 flex-1">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-lumina-text truncate">{topRaid.name}</span>
-            <span className="text-[9px] font-mono font-bold text-red-400 shrink-0">{remainingHp.toFixed(0)}/{topRaid.bossHp}</span>
-          </div>
-          <div className="h-2 bg-white/5 rounded-full overflow-hidden mb-2">
-            <motion.div animate={{ width: `${hpPercent}%` }} transition={{ duration: 0.5 }} className={`h-full rounded-full ${hpPercent > 50 ? 'bg-red-500' : hpPercent > 25 ? 'bg-orange-500' : 'bg-green-500'}`} />
-          </div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[8px] text-lumina-text/30 flex items-center gap-1"><Users size={9} />{topRaid.participants} raiders</span>
-            <span className="text-[8px] text-lumina-accent font-bold">+{topRaid.reward} XP</span>
-          </div>
-          {activeRaid === topRaid.id && attacking ? (
-            <div className="flex items-center justify-center gap-2 py-1.5">
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-3 h-3 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full" />
-              <span className="text-[9px] font-bold text-cyan-400">{damageDealt} DMG</span>
-            </div>
-          ) : (
-            <button onClick={() => joinRaid(topRaid.id)} data-testid={`join-raid-${topRaid.id}`} disabled={activeRaid === topRaid.id && !attacking && damageDealt > 0} className="w-full py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-bold text-cyan-400 uppercase tracking-widest hover:bg-cyan-500/20 transition-all disabled:opacity-40">
-              {activeRaid === topRaid.id && damageDealt > 0 ? `${damageDealt} DMG Dealt` : 'Join Raid'}
-            </button>
-          )}
-        </div>
-      )}
-
-      {raids.length > 1 && (
-        <button onClick={() => setExpanded(!expanded)} className="mt-2 text-[9px] font-bold text-lumina-text/30 hover:text-lumina-text/50 uppercase tracking-widest transition-colors text-center">
-          {expanded ? 'Show Less' : `+${raids.length - 1} More Raids`}
-        </button>
-      )}
-
-      <AnimatePresence>
-        {expanded && raids.slice(1).map((raid) => {
-          const rHp = Math.max(0, ((raid.bossHp - raid.currentDamage) / raid.bossHp) * 100);
-          return (
-            <motion.div key={raid.id} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-white/[0.03] rounded-xl p-3 border border-white/5 mt-2">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold text-lumina-text truncate">{raid.name}</span>
-                <span className="text-[9px] font-mono text-red-400 shrink-0">{Math.max(0, raid.bossHp - raid.currentDamage)}/{raid.bossHp}</span>
-              </div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden mb-2">
-                <div className={`h-full rounded-full ${rHp > 50 ? 'bg-red-500' : 'bg-orange-500'}`} style={{ width: `${rHp}%` }} />
-              </div>
-              <button onClick={() => joinRaid(raid.id)} data-testid={`join-raid-${raid.id}`} className="w-full py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-bold text-cyan-400 uppercase tracking-widest hover:bg-cyan-500/20 transition-all">
-                Join Raid
-              </button>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
-    </div>
-  );
-};
-
-
-
-
-// ========================================
-// REPAIR MEMORY MODAL (3-Question Flashcard)
-// ========================================
-const RepairMemoryModal = ({ topic, onClose, onRepaired }: { topic: Topic, onClose: () => void, onRepaired: () => void }) => {
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<boolean[]>([]);
-  const [showResult, setShowResult] = useState(false);
-
-  const questions = [
-    { q: `What is the core concept of "${topic.name}"?`, hint: 'Think about the fundamental idea' },
-    { q: `Name one real-world application of ${topic.name}.`, hint: 'How is this used in practice?' },
-    { q: `What connects ${topic.name} to other topics you\'ve studied?`, hint: 'Find the relationships' },
-  ];
-
-  const handleAnswer = (correct: boolean) => {
-    const newAnswers = [...answers, correct];
-    setAnswers(newAnswers);
-    if (step < 2) {
-      setStep(step + 1);
-    } else {
-      setShowResult(true);
-      if (newAnswers.filter(a => a).length >= 2) {
-        setTimeout(() => onRepaired(), 2000);
-      }
-    }
-  };
-
-  const correctCount = answers.filter(a => a).length;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"
-    >
-      <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        className="max-w-lg w-full card-lumina p-8 relative overflow-hidden"
-      >
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5">
-          <motion.div 
-            animate={{ width: `${((step + (showResult ? 1 : 0)) / 3) * 100}%` }}
-            className="h-full bg-gradient-to-r from-red-500 via-orange-500 to-lumina-accent rounded-full"
-          />
-        </div>
-
-        <div className="flex items-center gap-3 mb-8 mt-2">
-          <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-            <HeartPulse size={18} className="text-red-400" />
-          </div>
-          <div>
-            <h2 className="text-lg font-display font-bold text-lumina-text">Repair Memory</h2>
-            <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">{topic.name} - Quick Recovery</p>
-          </div>
-          <button onClick={onClose} className="ml-auto w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-lumina-text/40 hover:text-lumina-text">
-            <X size={16} />
-          </button>
-        </div>
-
-        {!showResult ? (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                {[0, 1, 2].map(i => (
-                  <div key={i} className={`flex-1 h-1.5 rounded-full transition-all ${
-                    i < step ? (answers[i] ? 'bg-lumina-accent' : 'bg-red-500') :
-                    i === step ? 'bg-white/20' : 'bg-white/5'
-                  }`} />
-                ))}
-              </div>
-
-              <div className="text-[10px] text-lumina-text/30 font-bold uppercase tracking-widest mb-3">Question {step + 1} of 3</div>
-              <h3 className="text-xl font-bold text-lumina-text mb-3 leading-relaxed">{questions[step].q}</h3>
-              <p className="text-xs text-lumina-text/20 italic mb-8">{questions[step].hint}</p>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleAnswer(false)}
-                  data-testid="repair-wrong"
-                  className="flex-1 py-4 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text/40 uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500/30 transition-all"
-                >
-                  Can't Recall
-                </button>
-                <button
-                  onClick={() => handleAnswer(true)}
-                  data-testid="repair-correct"
-                  className="flex-[2] py-4 rounded-xl bg-lumina-accent text-black text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all"
-                >
-                  I Remember!
-                </button>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        ) : (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
-            <div className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center ${
-              correctCount >= 2 ? 'bg-lumina-accent/10' : 'bg-red-500/10'
-            }`}>
-              {correctCount >= 2 
-                ? <CheckCheck size={40} className="text-lumina-accent" />
-                : <AlertTriangle size={40} className="text-red-400" />
-              }
-            </div>
-            <h3 className="text-2xl font-display font-bold text-lumina-text mb-2">
-              {correctCount >= 2 ? 'Memory Repaired!' : 'Needs More Work'}
-            </h3>
-            <p className="text-xs text-lumina-text/40 mb-2">
-              {correctCount}/3 correct - {correctCount >= 2 ? 'Node restored to healthy state' : 'Try a full focus session to rebuild'}
-            </p>
-            {correctCount >= 2 && <p className="text-sm font-bold text-lumina-accent">+25 XP Repair Bonus</p>}
-            <button onClick={onClose} className="mt-6 px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-lumina-text uppercase tracking-widest hover:bg-white/10 transition-all">
-              Close
-            </button>
-          </motion.div>
-        )}
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// ========================================
-// STREAK STORE WIDGET
-// ========================================
-const StreakStoreWidget = ({ user, onXpSpend }: { user: UserProfile, onXpSpend: (xp: number) => void }) => {
-  const [streakFreezes, setStreakFreezes] = useState(0);
-  const [purchasing, setPurchasing] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-
-  const purchaseFreeze = () => {
-    if (user.xp < 500) return;
-    setPurchasing(true);
-    setTimeout(() => {
-      onXpSpend(500);
-      setStreakFreezes(prev => prev + 1);
-      setPurchasing(false);
-      setShowConfirm(false);
-    }, 800);
-  };
-
-  return (
-    <div className="card-lumina p-6 border-orange-500/20" data-testid="streak-store-widget">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-          <Flame size={18} className="text-orange-400" />
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-lumina-text">Streak Store</h3>
-          <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">Protect your progress</p>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="text-3xl">🔥</div>
-          <div>
-            <div className="text-2xl font-display font-bold text-orange-400">{user.streak}</div>
-            <div className="text-[8px] text-lumina-text/30 uppercase tracking-widest">Day Streak</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {Array.from({ length: Math.min(streakFreezes, 5) }).map((_, i) => (
-            <div key={i} className="text-lg" title="Streak Freeze">🧊</div>
-          ))}
-          {streakFreezes > 5 && <span className="text-[10px] text-cyan-400 font-bold">+{streakFreezes - 5}</span>}
-        </div>
-      </div>
-
-      {!showConfirm ? (
-        <button
-          onClick={() => setShowConfirm(true)}
-          data-testid="buy-streak-freeze"
-          disabled={user.xp < 500}
-          className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:text-cyan-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-        >
-          <span className="text-lg">🧊</span>
-          Buy Streak Freeze
-          <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-400 text-[9px]">500 XP</span>
-        </button>
-      ) : (
-        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-          <p className="text-[10px] text-lumina-text/40 text-center mb-2">Spend 500 XP for a Streak Freeze?</p>
-          <div className="flex gap-2">
-            <button onClick={() => setShowConfirm(false)} className="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-lumina-text/40 uppercase tracking-widest">Cancel</button>
-            <button
-              onClick={purchaseFreeze}
-              disabled={purchasing}
-              data-testid="confirm-buy-freeze"
-              className="flex-[2] py-2.5 rounded-xl bg-cyan-500/20 border border-cyan-500/30 text-[10px] font-bold text-cyan-400 uppercase tracking-widest disabled:opacity-50"
-            >
-              {purchasing ? 'Purchasing...' : 'Confirm Purchase'}
-            </button>
-          </div>
-        </motion.div>
-      )}
-    </div>
-  );
-};
-
-// ========================================
-// BATTLE HUB VIEW (Arena Tab)
-// ========================================
-const BattleHubView = ({ user, subjects, onJumpToFocus, onXpGain }: { 
-  user: UserProfile, 
-  subjects: Subject[], 
-  onJumpToFocus: (t: Topic) => void,
-  onXpGain: (xp: number) => void 
-}) => {
-  return (
-    <div className="pt-32 px-6 pb-20 min-h-screen relative font-sans">
-      <div className="max-w-7xl mx-auto relative z-10">
-        <header className="mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-widest mb-4">
-            <Sword size={12} />
-            Battle Arena
-          </div>
-          <h1 className="text-5xl font-display font-bold text-lumina-text tracking-tight" data-testid="battle-hub-title">Arena</h1>
-          <p className="text-sm text-lumina-text/30 mt-2">Sharpen your skills through combat, raids, and survival challenges</p>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column - Triage + Interceptor */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Triage Mode - Full Card */}
-            <div className="card-lumina p-6 border-red-500/20">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-                  <Siren size={18} className="text-red-400" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-lumina-text">Emergency Triage</h2>
-                  <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">Rescue fading memories</p>
-                </div>
-              </div>
-              <TriageModeWidget subjects={subjects} user={user} onJumpToFocus={onJumpToFocus} />
-            </div>
-
-            {/* Distraction Interceptor - Full Card */}
-            <div className="card-lumina p-6 border-lumina-accent/20">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-lumina-accent/10 border border-lumina-accent/20 flex items-center justify-center">
-                  <Crosshair size={18} className="text-lumina-accent" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-lumina-text">Distraction Shield</h2>
-                  <p className="text-[10px] text-lumina-text/30 uppercase tracking-widest">Intercept tab switches for +50 XP</p>
-                </div>
-              </div>
-              <DistractionInterceptor 
-                topics={subjects.flatMap(s => s.topics)} 
-                user={user} 
-                onXpGain={onXpGain} 
-              />
-            </div>
-
-            {/* Quick Stats */}
-            <div className="card-lumina p-6">
-              <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-4">Arena Stats</h3>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-white/5 rounded-xl p-3 text-center">
-                  <div className="text-xl font-display font-bold text-red-400">{subjects.flatMap(s => s.topics).filter(t => t.progress < 50).length}</div>
-                  <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mt-1">Fading</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-3 text-center">
-                  <div className="text-xl font-display font-bold text-lumina-accent">{user.xp.toLocaleString()}</div>
-                  <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mt-1">Total XP</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-3 text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    {getRankIcon(user.rank)}
-                    <span className={`text-sm font-bold bg-gradient-to-r ${getRankColor(user.rank)} bg-clip-text text-transparent`}>{user.rank}</span>
-                  </div>
-                  <div className="text-[8px] text-lumina-text/20 uppercase tracking-widest mt-1">Rank</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Streak Store + Heatmap */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Streak Store */}
-            <StreakStoreWidget 
-              user={user} 
-              onXpSpend={(xp) => onXpGain(-xp)} 
-            />
-
-            {/* Activity Heatmap */}
-            <ActivityHeatmap />
-
-            {/* Battle Tips */}
-            <div className="card-lumina p-6 border-purple-500/20 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
-              <div className="flex items-start gap-4 ml-2">
-                <span className="text-3xl">💡</span>
-                <div>
-                  <h3 className="text-sm font-bold text-lumina-text mb-1">Arena Pro Tip</h3>
-                  <p className="text-xs text-lumina-text/40 leading-relaxed">
-                    Enable the Distraction Interceptor before starting a focus session. Every time you return from another tab, 
-                    you'll earn +50 XP by recalling a topic. It's the fastest way to rack up XP while building real memory strength!
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 
 export default function App() {
   const [view, setView] = useState<View>('auth');
@@ -4153,7 +2610,7 @@ export default function App() {
       if (userDoc) {
         const profile = userDoc as UserProfile;
         // Update rank based on XP if it's the old system
-        const newRank = getMemorEaseRank(profile.xp);
+        const newRank = getValorantRank(profile.xp);
         if (profile.rank !== newRank) {
           await supabase.from('users').update({ rank: newRank }).eq('uid', profile.uid);
           profile.rank = newRank;
@@ -4165,7 +2622,7 @@ export default function App() {
           uid: supabaseUser.id,
           name: supabaseUser.user_metadata?.full_name || 'New Scholar',
           avatar: supabaseUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${supabaseUser.id}`,
-          rank: getMemorEaseRank(0),
+          rank: getValorantRank(0),
           level: 1,
           xp: 0,
           streak: 0,
@@ -4205,10 +2662,10 @@ export default function App() {
           return { ...subject, topics: topicsData || [] };
         }));
         setSubjects(subjectsWithTopics as Subject[]);
+        return subjectsWithTopics as Subject[];
       }
+      return [];
     };
-
-    fetchSubjectsAndTopics();
 
     const fetchNotifications = async () => {
       const { data: notificationsData } = await supabase
@@ -4217,10 +2674,52 @@ export default function App() {
         .eq('uid', user.uid);
       if (notificationsData) {
         setNotifications(notificationsData as Notification[]);
+        return notificationsData as Notification[];
+      }
+      return [];
+    };
+
+    const generateReminders = async (currentSubjects: Subject[], currentNotifications: Notification[]) => {
+      if (!currentSubjects || currentSubjects.length === 0) return;
+      
+      const now = new Date();
+      const needsReminder = currentSubjects.flatMap(s => s.topics).filter(t => {
+        if (!t.nextReview) return false;
+        const reviewDate = new Date(t.nextReview);
+        return reviewDate <= now && t.progress < 100;
+      });
+
+      if (needsReminder.length > 0) {
+        const reminderId = `reminder-${now.toISOString().split('T')[0]}`;
+        const existingReminder = currentNotifications.find(n => n.id === reminderId);
+        
+        if (!existingReminder) {
+          const newNotification: Notification = {
+            id: reminderId,
+            uid: user.uid,
+            title: 'Memory Fading',
+            message: `The chapter "${needsReminder[0].name}" is going to fade away from your memory soon, kindly Memorease the topic.`,
+            time: 'Just now',
+            type: 'reminder',
+            isRead: false,
+            icon: '🧠'
+          };
+          
+          await supabase.from('notifications').insert(newNotification);
+          setNotifications(prev => [newNotification, ...prev]);
+        }
       }
     };
 
-    fetchNotifications();
+    const initData = async () => {
+      const [fetchedSubjects, fetchedNotifications] = await Promise.all([
+        fetchSubjectsAndTopics(),
+        fetchNotifications()
+      ]);
+      generateReminders(fetchedSubjects, fetchedNotifications);
+    };
+
+    initData();
 
     const fetchNoteCount = async () => {
       const { count, error } = await supabase
@@ -4318,7 +2817,7 @@ export default function App() {
 
         const newXp = user.xp + xpGain;
         const newLevel = Math.floor(newXp / 200) + 1;
-        const newRank = getMemorEaseRank(newXp);
+        const newRank = getValorantRank(newXp);
 
         await supabase
           .from('users')
@@ -4354,9 +2853,19 @@ export default function App() {
   const addSubject = async (name: string) => {
     if (!user) return;
     try {
+      const placeholderImages = [
+        'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&q=80&w=1000', // Math/Science
+        'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&q=80&w=1000', // Book/History
+        'https://images.unsplash.com/photo-1614935151651-0bea6508ab6b?auto=format&fit=crop&q=80&w=1000', // Chemistry
+        'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=1000', // Tech/Computer
+        'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1000', // Business/Graph
+      ];
+      const randomImage = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
+
       await supabase.from('subjects').insert({
         name,
-        uid: user.uid
+        uid: user.uid,
+        imageUrl: randomImage
       });
     } catch (error) {
       console.error('Error adding subject:', error);
@@ -4372,17 +2881,13 @@ export default function App() {
     }
 
     try {
-      // Find the subject name for this topic
-      const parentSubject = subjects.find(s => s.id === subjectId);
-      const subjectImageUrl = parentSubject ? getSubjectImage(parentSubject.name) : SUBJECT_IMAGES['default'];
-      
       await supabase.from('topics').insert({
         name,
         subjectId,
         uid: user.uid,
         progress: 0,
         description: 'New learning module.',
-        imageUrl: subjectImageUrl,
+        imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1000',
         lastReviewed: 'Never',
         nextReview: 'Today',
         chapters: 1,
@@ -4398,46 +2903,14 @@ export default function App() {
     setConfirmModal({
       isOpen: true,
       title: 'Delete Directory',
-      message: 'Are you sure? This will permanently delete all neural chapters and uploaded files within this directory.',
+      message: 'Are you sure? This will permanently delete all neural chapters within this directory.',
       onConfirm: async () => {
         try {
-          // Get all topics in this subject to find their assets
-          const subjectTopics = subjects.find(s => s.id === id)?.topics || [];
-          
-          // For each topic, list and remove all files from storage
-          for (const topic of subjectTopics) {
-            try {
-              const dirPath = `${user!.uid}/assets/${topic.id}`;
-              const { data: fileList, error: listError } = await supabase.storage
-                .from('app-files')
-                .list(dirPath);
-              
-              if (listError) {
-                console.error(`[RLS/Storage] Error listing files in ${dirPath}:`, listError);
-                continue;
-              }
-              
-              if (fileList && fileList.length > 0) {
-                const filePaths = fileList.map(f => `${dirPath}/${f.name}`);
-                const { error: removeError } = await supabase.storage
-                  .from('app-files')
-                  .remove(filePaths);
-                
-                if (removeError) {
-                  console.error(`[RLS/Storage] Error removing files in ${dirPath}:`, removeError);
-                }
-              }
-            } catch (storageErr) {
-              console.error(`[RLS/Storage] Failed to clean storage for topic ${topic.id}:`, storageErr);
-            }
-          }
-          
-          // Delete all topics in this subject from DB
+          // Delete all topics in this subject first to avoid foreign key constraints
           await supabase.from('topics').delete().eq('subjectId', id);
-          // Delete the subject itself
           await supabase.from('subjects').delete().eq('id', id);
         } catch (error) {
-          console.error('[RLS/Storage] Error deleting subject directory:', error);
+          console.error('Error deleting subject:', error);
         }
       }
     });
@@ -4515,22 +2988,6 @@ export default function App() {
               />
             </motion.div>
           )}
-          {user && view === 'battle' && (
-            <motion.div key="battle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <BattleHubView 
-                user={user} 
-                subjects={subjects} 
-                onJumpToFocus={handleJumpToFocus}
-                onXpGain={(xp: number) => {
-                  if (user) {
-                    const newXp = user.xp + xp;
-                    setUser({ ...user, xp: newXp, rank: getMemorEaseRank(newXp), level: Math.floor(newXp / 100) + 1 });
-                    supabase.from('users').update({ xp: newXp, rank: getMemorEaseRank(newXp), level: Math.floor(newXp / 100) + 1 }).eq('uid', user.uid);
-                  }
-                }}
-              />
-            </motion.div>
-          )}
           {user && view === 'profile' && (
             <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <ProfileView user={user} setUser={setUser} subjects={subjects} />
@@ -4538,7 +2995,7 @@ export default function App() {
           )}
           {user && view === 'notifications' && (
             <motion.div key="notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <NotificationsView notifications={notifications} subjects={subjects} user={user} />
+              <NotificationsView notifications={notifications} />
             </motion.div>
           )}
         </AnimatePresence>
