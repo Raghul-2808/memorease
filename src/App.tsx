@@ -1009,10 +1009,12 @@ const OverviewView = ({ onJumpBack, user, subjects, noteCount }: { onJumpBack: (
 
 const FocusView = ({ 
   settings, 
+  onUpdateSettings,
   activeTopic, 
   onFinishTopic 
 }: { 
   settings: PomodoroSettings, 
+  onUpdateSettings: (s: PomodoroSettings) => void,
   activeTopic: Topic | null, 
   onFinishTopic: (t: Topic) => void 
 }) => {
@@ -1130,7 +1132,7 @@ const FocusView = ({
                   strokeWidth="4"
                   strokeDasharray="100 100"
                   initial={{ strokeDashoffset: 100 }}
-                  animate={{ strokeDashoffset: 100 - (timeLeft / (settings.workTime * 60)) * 100 }}
+                  animate={{ strokeDashoffset: 100 - (timeLeft / ((mode === 'work' ? settings.workTime : mode === 'short' ? settings.shortBreak : settings.longBreak) * 60)) * 100 }}
                   transition={{ duration: 1, ease: "linear" }}
                 />
               </svg>
@@ -1214,6 +1216,39 @@ const FocusView = ({
               <p className="text-[10px] text-lumina-text/30 leading-relaxed">
                 Session fails if you leave the tab or exit fullscreen. Streak reset risk active.
               </p>
+            </div>
+
+            <div className="card-lumina">
+              <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Timer Configuration</h3>
+              <div className="space-y-4">
+                {[
+                  { label: 'Work', key: 'workTime' as const },
+                  { label: 'Short Break', key: 'shortBreak' as const },
+                  { label: 'Long Break', key: 'longBreak' as const }
+                ].map(({ label, key }) => (
+                  <div key={key} className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                      <span className="text-lumina-text/40">{label}</span>
+                      <span className="text-lumina-accent">{settings[key]}m</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max={key === 'workTime' ? "120" : "60"} 
+                      value={settings[key]}
+                      onChange={(e) => {
+                        const newVal = parseInt(e.target.value);
+                        onUpdateSettings({ ...settings, [key]: newVal });
+                        if (mode === (key === 'workTime' ? 'work' : key === 'shortBreak' ? 'short' : 'long')) {
+                          setTimeLeft(newVal * 60);
+                          setIsActive(false);
+                        }
+                      }}
+                      className="w-full accent-lumina-accent bg-white/5 rounded-lg appearance-none h-1 cursor-pointer"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="card-lumina">
@@ -2944,7 +2979,7 @@ export default function App() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const [pomodoroSettings] = useState<PomodoroSettings>({
+  const [pomodoroSettings, setPomodoroSettings] = useState<PomodoroSettings>({
     workTime: 25,
     shortBreak: 5,
     longBreak: 15
@@ -2983,7 +3018,7 @@ export default function App() {
           )}
           {user && view === 'focus' && (
             <motion.div key="focus" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FocusView settings={pomodoroSettings} activeTopic={activeTopic} onFinishTopic={handleFinishTopic} />
+              <FocusView settings={pomodoroSettings} onUpdateSettings={setPomodoroSettings} activeTopic={activeTopic} onFinishTopic={handleFinishTopic} />
             </motion.div>
           )}
           {user && view === 'vault' && (
