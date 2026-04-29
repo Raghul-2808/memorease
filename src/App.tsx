@@ -118,6 +118,7 @@ interface Notification {
   type: 'reminder' | 'achievement' | 'system';
   isRead: boolean;
   icon?: string;
+  topicId?: string;
 }
 
 interface PomodoroSettings {
@@ -218,9 +219,20 @@ const PlanLimitModal = ({
   </AnimatePresence>
 );
 
-const Navbar = ({ currentView, setView, unreadCount, onLogout }: { currentView: View, setView: (v: View) => void, unreadCount: number, onLogout: () => void }) => {
+const Navbar = ({ currentView, setView, unreadCount, onLogout, user }: { currentView: View, setView: (v: View) => void, unreadCount: number, onLogout: () => void, user: UserProfile }) => {
   const [time, setTime] = useState(new Date());
   const [scrolled, setScrolled] = useState(false);
+  const [prevXp, setPrevXp] = useState(user.xp);
+  const [flash, setFlash] = useState(false);
+
+  useEffect(() => {
+    if (user.xp > prevXp) {
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 500);
+      setPrevXp(user.xp);
+      return () => clearTimeout(t);
+    }
+  }, [user.xp, prevXp]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -243,7 +255,7 @@ const Navbar = ({ currentView, setView, unreadCount, onLogout }: { currentView: 
           <div className="w-8 h-8 bg-lumina-accent rounded-lg flex items-center justify-center shadow-lg shadow-lumina-accent/20">
             <Brain size={18} className="text-black" strokeWidth={2.5} />
           </div>
-          <span className="text-lumina-text font-display font-bold text-xl tracking-tight">MemorEase</span>
+          <span className="text-lumina-text font-display font-bold text-xl tracking-tight hidden sm:block">MemorEase</span>
         </div>
         
         <div className="hidden md:flex items-center gap-1">
@@ -254,7 +266,31 @@ const Navbar = ({ currentView, setView, unreadCount, onLogout }: { currentView: 
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
+        {/* XP Bar Component */}
+        <div className="hidden lg:flex items-center gap-3 bg-white/5 py-1 px-3 rounded-full border border-white/5 relative">
+          <div className="flex flex-col">
+            <span className="text-[9px] font-bold text-lumina-text/40 uppercase tracking-widest leading-none mb-1">Total XP</span>
+            <span className="text-xs font-bold text-lumina-accent font-mono leading-none">{user.xp}</span>
+          </div>
+          <div className="w-24 h-1.5 bg-black/40 rounded-full overflow-hidden relative">
+            <motion.div 
+              className={`h-full rounded-full transition-colors duration-300 ${flash ? 'bg-white' : 'bg-lumina-accent'}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(100, (user.xp % 1000) / 10)}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+            {flash && (
+              <motion.div
+                className="absolute inset-0 bg-white/50 blur-[4px]"
+                initial={{ opacity: 1, scaleX: 0 }}
+                animate={{ opacity: 0, scaleX: 1.5 }}
+                transition={{ duration: 0.5 }}
+              />
+            )}
+          </div>
+        </div>
+
         <div className="hidden sm:flex items-center gap-2 text-lumina-text/40 font-mono text-[10px] bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
           <Clock size={12} />
           <span>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
@@ -374,6 +410,25 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
     } catch (err: any) {
       setError(err.message);
     }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMsg(null);
+    setLoading(true);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccessMsg("Check your email for the password reset link.");
+      setMode('login');
+    }
+    setLoading(false);
   };
 
   return (
@@ -748,12 +803,24 @@ const AuthView = ({ onLogin }: { onLogin: () => void }) => {
                 <motion.div key="forgot" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
                   <h2 className="text-3xl font-bold mb-2">Recovery</h2>
                   <p className="text-sm text-lumina-text/40 mb-8">Request credential reset link.</p>
-                  <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setMode('login'); }}>
+                  <form className="space-y-4" onSubmit={handleResetPassword}>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-lumina-text/40 ml-1">Email</label>
-                      <input type="email" placeholder="alex@rivers.sys" className="input-lumina" required />
+                      <input 
+                        type="email" 
+                        placeholder="alex@rivers.sys" 
+                        className="input-lumina" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required 
+                      />
                     </div>
-                    <button type="submit" className="btn-primary w-full py-4 mt-4">Send Recovery Link</button>
+                    {error && (
+                      <div className="text-red-500 text-xs font-bold text-center mt-2">{error}</div>
+                    )}
+                    <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-4">
+                      {loading ? 'Sending...' : 'Send Recovery Link'}
+                    </button>
                     <button type="button" onClick={() => setMode('login')} className="w-full text-xs font-bold text-lumina-text/20 hover:text-lumina-text transition-colors mt-4">Back to Login</button>
                   </form>
                 </motion.div>
@@ -1022,10 +1089,7 @@ const FocusView = ({
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'work' | 'short' | 'long'>('work');
   const [phase, setPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
-  const [selectedMusic, setSelectedMusic] = useState('None');
   const [showFinishModal, setShowFinishModal] = useState(false);
-  const [hardcoreMode, setHardcoreMode] = useState(false);
-  const [sessionFailed, setSessionFailed] = useState(false);
 
   useEffect(() => {
     let timer: any;
@@ -1037,31 +1101,6 @@ const FocusView = ({
     }
     return () => clearInterval(timer);
   }, [isActive, timeLeft, mode]);
-
-  useEffect(() => {
-    if (!isActive || !hardcoreMode) return;
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        setIsActive(false);
-        setSessionFailed(true);
-      }
-    };
-
-    const handleFullscreenChange = () => {
-      if (!document.fullscreenElement) {
-        setIsActive(false);
-        setSessionFailed(true);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
-  }, [isActive, hardcoreMode]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -1078,11 +1117,6 @@ const FocusView = ({
   };
 
   const toggleTimer = () => {
-    if (!isActive && hardcoreMode) {
-      document.documentElement.requestFullscreen().catch(() => {
-        // Fallback for fullscreen error
-      });
-    }
     setIsActive(!isActive);
   };
 
@@ -1201,24 +1235,6 @@ const FocusView = ({
             </div>
 
             <div className="card-lumina">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest">Hardcore Mode</h3>
-                <button 
-                  onClick={() => setHardcoreMode(!hardcoreMode)}
-                  className={`w-10 h-5 rounded-full relative transition-all ${hardcoreMode ? 'bg-lumina-accent' : 'bg-white/10'}`}
-                >
-                  <motion.div 
-                    animate={{ x: hardcoreMode ? 22 : 2 }}
-                    className={`absolute top-1 w-3 h-3 rounded-full ${hardcoreMode ? 'bg-black' : 'bg-white/40'}`} 
-                  />
-                </button>
-              </div>
-              <p className="text-[10px] text-lumina-text/30 leading-relaxed">
-                Session fails if you leave the tab or exit fullscreen. Streak reset risk active.
-              </p>
-            </div>
-
-            <div className="card-lumina">
               <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Timer Configuration</h3>
               <div className="space-y-4">
                 {[
@@ -1250,57 +1266,9 @@ const FocusView = ({
                 ))}
               </div>
             </div>
-
-            <div className="card-lumina">
-              <h3 className="text-[10px] font-bold text-lumina-text/30 uppercase tracking-widest mb-6">Neural Ambience</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {['None', 'Rain', 'Lo-Fi', 'Waves'].map((music) => (
-                  <button
-                    key={music}
-                    onClick={() => setSelectedMusic(music)}
-                    className={`py-2 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                      selectedMusic === music 
-                        ? 'bg-lumina-accent/20 text-lumina-accent border border-lumina-accent/30' 
-                        : 'bg-white/5 text-lumina-text/40 border border-transparent hover:border-white/10'
-                    }`}
-                  >
-                    {music}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
-
-      {/* Session Failed Modal */}
-      <AnimatePresence>
-        {sessionFailed && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="max-w-md w-full card-lumina text-center p-10 border-red-500/30"
-            >
-              <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-8">
-                <AlertTriangle size={40} className="text-red-500" />
-              </div>
-              <h2 className="text-3xl font-display font-bold text-lumina-text mb-4">Protocol Terminated</h2>
-              <p className="text-lumina-text/40 text-sm mb-10 leading-relaxed">
-                Hardcore mode violation detected. Neural synchronization lost. Focus session invalidated.
-              </p>
-              <button 
-                onClick={() => { setSessionFailed(false); resetTimer('work'); }}
-                className="btn-primary w-full bg-red-500 hover:bg-red-600 text-white border-red-500"
-              >
-                Re-Initialize
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Session Finish Modal */}
       <AnimatePresence>
@@ -1482,6 +1450,18 @@ const VaultView = ({
                 className="bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-6 text-sm text-lumina-text focus:border-lumina-accent/50 transition-all outline-none w-64"
               />
             </div>
+            <button 
+              onClick={async () => {
+                const demoSubjects = ["Quantum Computing", "Ancient Rome", "Neuroscience", "Machine Learning", "Macroeconomics"];
+                for (const name of demoSubjects) {
+                  await onAddSubject(name);
+                }
+              }}
+              className="bg-white/5 hover:bg-white/10 text-lumina-text px-4 py-3 rounded-xl font-bold flex items-center gap-2 transition-all border border-white/10"
+            >
+              <BookOpen size={18} />
+              Add Demos
+            </button>
             <button 
               onClick={() => setShowUploadModal(true)}
               className="btn-primary flex items-center gap-2"
@@ -1966,6 +1946,10 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
 
       setEditAvatar(filePath);
       
+      // Auto-save the new avatar to the user profile
+      await supabase.from('users').update({ avatar: filePath }).eq('uid', user.uid);
+      setUser(prev => prev ? { ...prev, avatar: filePath } : null);
+
       const { data: urlData } = await supabase.storage.from('app-files').createSignedUrl(filePath, 3600);
       if (urlData?.signedUrl) {
         setAvatarUrl(urlData.signedUrl);
@@ -2045,32 +2029,42 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
               <div className="absolute top-0 left-0 w-full h-1 bg-lumina-accent" />
               
               <div className="relative inline-block mb-8">
-                <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-lumina-accent/20 p-1 group">
+                <div 
+                  className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-lumina-accent/20 p-1 group cursor-pointer relative"
+                  onClick={() => document.getElementById('avatar-upload-direct')?.click()}
+                >
                   <img 
                     src={avatarUrl} 
                     alt={user.name} 
                     className={`w-full h-full object-cover rounded-2xl grayscale group-hover:grayscale-0 transition-all duration-500 ${isUploadingAvatar ? 'opacity-50' : ''}`}
                     referrerPolicy="no-referrer"
                   />
+                  <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl text-white">
+                    <Camera size={24} className="mb-2" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Update</span>
+                  </div>
+                  <input 
+                    id="avatar-upload-direct"
+                    type="file" 
+                    accept="image/*"
+                    className="hidden" 
+                    onChange={async (e) => {
+                      await handleAvatarUpload(e);
+                      // Auto-save just the avatar if not in forms
+                      if (!isEditing) {
+                        try {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          // wait a tiny bit to ensure editAvatar is updated in state, actually we can just rely on the fact that handleAvatarUpload updates Supabase storage, but we need the new path.
+                          // Let's modify handleAvatarUpload to return the path, or just do the save inside handling.
+                        } catch(err) {}
+                      }
+                    }}
+                  />
                 </div>
                 {!isEditing && (
-                  <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-[#0a0a0a] border border-lumina-accent/30 rounded-xl flex items-center justify-center text-lumina-accent rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                  <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-[#0a0a0a] border border-lumina-accent/30 rounded-xl flex items-center justify-center text-lumina-accent rotate-12 group-hover:rotate-0 pointer-events-none transition-transform duration-500">
                     {getRankIcon(user.rank, 24)}
-                  </div>
-                )}
-                {isEditing && (
-                  <div 
-                    className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-lumina-accent text-black flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-transform"
-                    onClick={() => document.getElementById('avatar-upload')?.click()}
-                  >
-                    <Camera size={18} />
-                    <input 
-                      id="avatar-upload"
-                      type="file" 
-                      accept="image/*"
-                      className="hidden" 
-                      onChange={handleAvatarUpload}
-                    />
                   </div>
                 )}
               </div>
@@ -2199,7 +2193,7 @@ const ProfileView = ({ user, setUser, subjects }: { user: UserProfile, setUser: 
   );
 };
 
-const NotificationsView = ({ notifications }: { notifications: Notification[] }) => {
+const NotificationsView = ({ notifications, subjects, onReviewNow }: { notifications: Notification[], subjects: Subject[], onReviewNow: (topic: Topic) => void }) => {
   const markAllRead = async () => {
     try {
       const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
@@ -2249,24 +2243,38 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className={`card-lumina p-6 flex items-start gap-6 relative group transition-all ${!n.isRead ? 'border-lumina-accent/50' : ''}`}
+                className={`card-lumina p-6 flex flex-col md:flex-row items-start md:items-center gap-6 relative group transition-all ${!n.isRead ? 'border-lumina-accent/50' : ''}`}
               >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                  n.type === 'reminder' ? 'bg-lumina-accent/10 text-lumina-accent text-2xl' :
-                  n.type === 'achievement' ? 'bg-white/10 text-white text-2xl' : 'bg-white/5 text-lumina-text/40 text-2xl'
-                }`}>
-                  {n.icon ? n.icon : (
-                    n.type === 'reminder' ? '🧠' : n.type === 'achievement' ? '🏆' : '🔔'
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-sm font-bold text-lumina-text uppercase tracking-tight">{n.title}</h3>
-                    <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">{n.time}</span>
+                <div className="flex flex-1 items-start gap-6">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                    n.type === 'reminder' ? 'bg-lumina-accent/10 text-lumina-accent text-2xl' :
+                    n.type === 'achievement' ? 'bg-white/10 text-white text-2xl' : 'bg-white/5 text-lumina-text/40 text-2xl'
+                  }`}>
+                    {n.icon ? n.icon : (
+                      n.type === 'reminder' ? '🧠' : n.type === 'achievement' ? '🏆' : '🔔'
+                    )}
                   </div>
-                  <p className="text-xs text-lumina-text/40 leading-relaxed">{n.message}</p>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-sm font-bold text-lumina-text uppercase tracking-tight">{n.title}</h3>
+                      <span className="text-[10px] font-bold text-lumina-text/20 uppercase tracking-widest">{n.time}</span>
+                    </div>
+                    <p className="text-xs text-lumina-text/40 leading-relaxed">{n.message}</p>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                
+                <div className="flex items-center gap-4 w-full md:w-auto mt-4 md:mt-0 justify-end">
+                  {n.type === 'reminder' && n.topicId && (
+                    <button 
+                      onClick={() => {
+                        const topic = subjects.flatMap(s => s.topics).find(t => t.id === n.topicId);
+                        if (topic) onReviewNow(topic);
+                      }}
+                      className="btn-primary py-2.5 px-6 text-[10px] uppercase tracking-[0.2em]"
+                    >
+                      Review Now
+                    </button>
+                  )}
                   <button 
                     onClick={() => deleteNotification(n.id)}
                     className="w-10 h-10 rounded-xl bg-white/5 text-lumina-text/40 flex items-center justify-center hover:bg-red-500 hover:text-black transition-all"
@@ -2274,6 +2282,7 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
                     <Trash2 size={16} />
                   </button>
                 </div>
+                
                 {!n.isRead && (
                   <div className="absolute top-4 left-4 w-2 h-2 bg-lumina-accent rounded-full animate-pulse" />
                 )}
@@ -2285,22 +2294,6 @@ const NotificationsView = ({ notifications }: { notifications: Notification[] })
               <p className="text-[10px] uppercase tracking-[0.3em]">All focuses synchronized.</p>
             </div>
           )}
-        </div>
-
-        <div className="mt-16 p-8 card-lumina relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-lumina-accent" />
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="w-16 h-16 rounded-2xl bg-lumina-accent flex items-center justify-center text-black shadow-2xl group-hover:scale-110 transition-transform">
-              <Brain size={32} />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-lg font-bold text-lumina-text mb-2 uppercase tracking-tight">Memory Decay Alert</h3>
-              <p className="text-xs text-lumina-text/40 uppercase tracking-widest leading-relaxed">
-                Quantum Physics: Schrödinger's Cat is nearing the forgetting threshold. Review now to maintain 90% retention.
-              </p>
-            </div>
-            <button className="btn-primary w-full md:w-auto py-4 px-10 text-[10px] uppercase tracking-[0.2em]">Review Now</button>
-          </div>
         </div>
       </div>
     </div>
@@ -2614,6 +2607,10 @@ export default function App() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [authReady, setAuthReady] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [recoveryMode, setRecoveryMode] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [networkError, setNetworkError] = useState<string | null>(null);
 
   // Auth Listener
   useEffect(() => {
@@ -2624,18 +2621,31 @@ export default function App() {
           console.error("Session error:", error.message);
           if (error.message.includes('Refresh Token Not Found') || error.message.includes('Invalid Refresh Token')) {
              await supabase.auth.signOut();
+          } else if (error.message.includes('NetworkError') || error.message.includes('fetch')) {
+             setNetworkError("Failed to connect to backend. Please check your network or verify that VITE_SUPABASE_URL is correct in the Secrets panel.");
           }
         }
         handleSession(session);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Unexpected error during getSession:", err);
+        if (err?.message?.includes('Network Error') || err?.message?.includes('fetch') || err?.toString().includes('NetworkError')) {
+           setNetworkError("Failed to connect to backend. Please check your network or verify that VITE_SUPABASE_URL is correct in the Secrets panel.");
+        }
         handleSession(null);
       }
     };
 
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Check hash for recovery
+    if (window.location.hash.includes('type=recovery')) {
+      setRecoveryMode(true);
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecoveryMode(true);
+      }
       handleSession(session);
     });
 
@@ -2643,45 +2653,63 @@ export default function App() {
   }, []);
 
   const handleSession = async (session: any) => {
-    if (session?.user) {
-      const supabaseUser = session.user;
-      
-      // Check if user exists in Supabase DB
-      const { data: userDoc, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('uid', supabaseUser.id)
-        .single();
+    try {
+      if (session?.user) {
+        const supabaseUser = session.user;
+        
+        // Check if user exists in Supabase DB
+        const { data: userDoc, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', supabaseUser.id)
+          .single();
 
-      if (userDoc) {
-        const profile = userDoc as UserProfile;
-        // Update rank based on XP if it's the old system
-        const newRank = getValorantRank(profile.xp);
-        if (profile.rank !== newRank) {
-          await supabase.from('users').update({ rank: newRank }).eq('uid', profile.uid);
-          profile.rank = newRank;
+        if (error && (error.message.includes('NetworkError') || error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+          setNetworkError("Failed to connect to backend. Please check your network or verify that VITE_SUPABASE_URL is correct in the Secrets panel.");
+          setUser(null);
+          setView('auth');
+          setAuthReady(true);
+          setLoading(false);
+          return;
         }
-        setUser(profile);
+
+        if (userDoc) {
+          const profile = userDoc as UserProfile;
+          // Update rank based on XP if it's the old system
+          const newRank = getValorantRank(profile.xp);
+          if (profile.rank !== newRank) {
+            await supabase.from('users').update({ rank: newRank }).eq('uid', profile.uid);
+            profile.rank = newRank;
+          }
+          setUser(profile);
+        } else {
+          // Create new user profile
+          const newUser: UserProfile = {
+            uid: supabaseUser.id,
+            name: supabaseUser.user_metadata?.full_name || 'New Scholar',
+            avatar: supabaseUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${supabaseUser.id}`,
+            rank: getValorantRank(0),
+            level: 1,
+            xp: 0,
+            streak: 0,
+            totalCards: 0,
+            globalRank: 0,
+            lastActive: new Date().toISOString(),
+            plan: 'free'
+          };
+          await supabase.from('users').insert(newUser);
+          setUser(newUser);
+        }
+        setView('overview');
       } else {
-        // Create new user profile
-        const newUser: UserProfile = {
-          uid: supabaseUser.id,
-          name: supabaseUser.user_metadata?.full_name || 'New Scholar',
-          avatar: supabaseUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${supabaseUser.id}`,
-          rank: getValorantRank(0),
-          level: 1,
-          xp: 0,
-          streak: 0,
-          totalCards: 0,
-          globalRank: 0,
-          lastActive: new Date().toISOString(),
-          plan: 'free'
-        };
-        await supabase.from('users').insert(newUser);
-        setUser(newUser);
+        setUser(null);
+        setView('auth');
       }
-      setView('overview');
-    } else {
+    } catch (err: any) {
+      console.error("handleSession error:", err);
+      if (err?.message?.includes('Network Error') || err?.message?.includes('fetch') || err?.toString().includes('NetworkError') || err?.message?.includes('Failed to fetch')) {
+        setNetworkError("Failed to connect to backend. Please check your network or verify that VITE_SUPABASE_URL is correct in the Secrets panel.");
+      }
       setUser(null);
       setView('auth');
     }
@@ -2694,12 +2722,17 @@ export default function App() {
     if (!user?.uid) return;
 
     const fetchSubjectsAndTopics = async () => {
-      const { data: subjectsData } = await supabase
+      const { data: subjectsData, error: subjectsError } = await supabase
         .from('subjects')
         .select('*')
         .eq('uid', user.uid);
 
-      if (subjectsData) {
+      if (subjectsError) {
+        console.error("Error fetching subjects. Ensure your database tables exist.", subjectsError);
+        return [];
+      }
+
+      if (subjectsData && subjectsData.length > 0) {
         const subjectsWithTopics = await Promise.all(subjectsData.map(async (subject) => {
           const { data: topicsData } = await supabase
             .from('topics')
@@ -2709,6 +2742,24 @@ export default function App() {
         }));
         setSubjects(subjectsWithTopics as Subject[]);
         return subjectsWithTopics as Subject[];
+      } else if (subjectsData && subjectsData.length === 0) {
+        // Auto-seed
+        const demoNames = ["Quantum Computing", "Ancient Rome", "Neuroscience"];
+        for (const name of demoNames) {
+          await supabase.from('subjects').insert({
+            name,
+            uid: user.uid,
+            imageUrl: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&q=80&w=1000'
+          });
+        }
+        
+        // Refetch
+        const { data: refetched } = await supabase.from('subjects').select('*').eq('uid', user.uid);
+        if (refetched) {
+          const subjectsWithTopics = refetched.map(subject => ({ ...subject, topics: [] }));
+          setSubjects(subjectsWithTopics as Subject[]);
+          return subjectsWithTopics as Subject[];
+        }
       }
       return [];
     };
@@ -2748,7 +2799,8 @@ export default function App() {
             time: 'Just now',
             type: 'reminder',
             isRead: false,
-            icon: '🧠'
+            icon: '🧠',
+            topicId: needsReminder[0].id
           };
           
           await supabase.from('notifications').insert(newNotification);
@@ -2825,6 +2877,23 @@ export default function App() {
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Logout failed:', error);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdatingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setIsUpdatingPassword(false);
+
+    if (error) {
+      alert(`Error updating password: ${error.message}`);
+    } else {
+      alert("Password updated successfully!");
+      setRecoveryMode(false);
+      setNewPassword('');
+      // Clean hash
+      window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
     }
   };
 
@@ -2908,11 +2977,21 @@ export default function App() {
       ];
       const randomImage = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
 
-      await supabase.from('subjects').insert({
+      const { data, error } = await supabase.from('subjects').insert({
         name,
         uid: user.uid,
         imageUrl: randomImage
-      });
+      }).select();
+      
+      if (error) {
+        console.error('Error adding subject:', error);
+        alert(`Failed to add directory: ${error.message}`);
+        return;
+      }
+      
+      if (data && data[0]) {
+        setSubjects(prev => [...prev, { ...(data[0] as any), topics: [] } as Subject]);
+      }
     } catch (error) {
       console.error('Error adding subject:', error);
     }
@@ -2927,7 +3006,7 @@ export default function App() {
     }
 
     try {
-      await supabase.from('topics').insert({
+      const { data, error } = await supabase.from('topics').insert({
         name,
         subjectId,
         uid: user.uid,
@@ -2939,7 +3018,10 @@ export default function App() {
         chapters: 1,
         masteryLevel: 1,
         assets: []
-      });
+      }).select();
+      if (data && data[0]) {
+        setSubjects(prev => prev.map(s => s.id === subjectId ? { ...s, topics: [...s.topics, data[0] as unknown as Topic] } : s));
+      }
     } catch (error) {
       console.error('Error adding topic:', error);
     }
@@ -2955,6 +3037,7 @@ export default function App() {
           // Delete all topics in this subject first to avoid foreign key constraints
           await supabase.from('topics').delete().eq('subjectId', id);
           await supabase.from('subjects').delete().eq('id', id);
+          setSubjects(prev => prev.filter(s => s.id !== id));
         } catch (error) {
           console.error('Error deleting subject:', error);
         }
@@ -2970,6 +3053,7 @@ export default function App() {
       onConfirm: async () => {
         try {
           await supabase.from('topics').delete().eq('id', id);
+          setSubjects(prev => prev.map(s => ({ ...s, topics: s.topics.filter(t => t.id !== id) })));
         } catch (error) {
           console.error('Error deleting topic:', error);
         }
@@ -3001,9 +3085,47 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-lumina-bg font-mono text-lumina-text selection:bg-lumina-accent/30">
+      {networkError && (
+        <div className="fixed top-0 left-0 right-0 z-[1000] bg-red-500/90 text-white text-center py-2 px-4 shadow-xl shadow-red-500/20 backdrop-blur-md flex items-center justify-center gap-2">
+           <AlertTriangle size={16} />
+           <p className="text-sm font-bold">{networkError}</p>
+           <button onClick={() => setNetworkError(null)} className="ml-4 p-1 hover:bg-white/20 rounded-full transition-colors"><X size={14}/></button>
+        </div>
+      )}
       <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setIsCommandPaletteOpen} setView={setView} subjects={subjects} onSelectTopic={handleJumpToFocus} />
-      {user && <Navbar currentView={view} setView={setView} unreadCount={unreadCount} onLogout={handleLogout} />}
+      {user && <Navbar currentView={view} setView={setView} unreadCount={unreadCount} onLogout={handleLogout} user={user} />}
       
+      {recoveryMode && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }} 
+            animate={{ scale: 1, opacity: 1 }} 
+            className="max-w-md w-full card-lumina text-center p-10 relative"
+          >
+            <h2 className="text-3xl font-display font-bold text-lumina-text mb-2">Set New Password</h2>
+            <p className="text-lumina-text/40 text-sm mb-6">Please enter your new password.</p>
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <input 
+                type="password" 
+                placeholder="New password..." 
+                className="input-lumina" 
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+              <button 
+                type="submit" 
+                disabled={isUpdatingPassword}
+                className="btn-primary w-full py-3"
+              >
+                {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
       <main className="relative">
         <AnimatePresence mode="wait">
           {!user && (
@@ -3041,7 +3163,7 @@ export default function App() {
           )}
           {user && view === 'notifications' && (
             <motion.div key="notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <NotificationsView notifications={notifications} />
+              <NotificationsView notifications={notifications} subjects={subjects} onReviewNow={handleJumpToFocus} />
             </motion.div>
           )}
         </AnimatePresence>
